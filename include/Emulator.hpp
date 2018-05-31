@@ -17,6 +17,8 @@ class Emulator {
 		static ROM rom;
 		static Memory mem;
 		static Display display;
+		static Window * window;
+		static xcb_connection_t * connection;
 
 		static bool emuRunning;
 		static Time emuStartTime;
