@@ -18,8 +18,8 @@ class Emulator {
 		static Memory mem;
 		static Display display;
 
-		static bool engineRunning;
-		static Time engineStartTime;
+		static bool emuRunning;
+		static Time emuStartTime;
 
 
 }
