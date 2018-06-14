@@ -1,9 +1,11 @@
 // Local Headers
 #include "glitter.hpp"
+#include "PCH.hpp"
 
 // System Headers
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include "Emulator.hpp"
 
 // Standard Headers
 #include <cstdio>
@@ -13,7 +15,7 @@ int main(int argc, char * argv[]) {
 
     // Load GLFW and Create a Window
     if (!glfwInit()){
-        fprintf(stderr, "Failed to init GLFW");
+        DBG_SEVERE("Failed to init GLFW");
         return EXIT_FAILURE;
     }
     
@@ -21,30 +23,15 @@ int main(int argc, char * argv[]) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    GLFWwindow* mWindow = glfwCreateWindow(mWidth, mHeight, "OpenGL", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(mWidth, mHeight, "OpenGL", nullptr, nullptr);
     // Check for Valid Context
-    if (mWindow == nullptr) {
-        fprintf(stderr, "Failed to Create OpenGL Context");
+    if (window == nullptr) {
+        DBG_SEVERE("Failed to Create OpenGL Context");
         return EXIT_FAILURE;
     }
 
-    // Create Context and Load OpenGL Functions
-    glfwMakeContextCurrent(mWindow);
-    gladLoadGL();
-    fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
 
-    // Rendering Loop
-    while (glfwWindowShouldClose(mWindow) == false) {
-        if (glfwGetKey(mWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(mWindow, true);
-
-        // Background Fill Color
-        glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // Flip Buffers and Draw
-        glfwSwapBuffers(mWindow);
-        glfwPollEvents();
-    }   glfwTerminate();
+    Emulator::start(window);
+    
     return EXIT_SUCCESS;
 }

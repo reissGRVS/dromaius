@@ -9,10 +9,10 @@
 ../dromaius/include/Emulator.hpp
 PCH.hpp
 ../dromaius/include/PCH.hpp
+glad/glad.h
+-
 GLFW/glfw3.h
 -
-glad/glad.h
-../dromaius/include/glad/glad.h
 
 ../dromaius/include/PCH.hpp
 cstdlib
@@ -1009,20 +1009,20 @@ arm_neon.h
 /home/reiss/Documents/dromaius/dromaius/src/Emulator.cpp
 PCH.hpp
 /home/reiss/Documents/dromaius/dromaius/src/PCH.hpp
-glad/glad.h
-/home/reiss/Documents/dromaius/dromaius/src/glad/glad.h
-GLFW/glfw3.h
--
 Emulator.hpp
 /home/reiss/Documents/dromaius/dromaius/src/Emulator.hpp
 
 /home/reiss/Documents/dromaius/dromaius/src/main.cpp
 glitter.hpp
 /home/reiss/Documents/dromaius/dromaius/src/glitter.hpp
+PCH.hpp
+/home/reiss/Documents/dromaius/dromaius/src/PCH.hpp
 glad/glad.h
 -
 GLFW/glfw3.h
 -
+Emulator.hpp
+/home/reiss/Documents/dromaius/dromaius/src/Emulator.hpp
 cstdio
 -
 cstdlib

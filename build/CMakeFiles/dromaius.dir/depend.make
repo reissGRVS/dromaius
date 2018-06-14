@@ -12,6 +12,8 @@ CMakeFiles/dromaius.dir/dromaius/src/Emulator.cpp.o: ../dromaius/libs/glad/inclu
 CMakeFiles/dromaius.dir/dromaius/src/Emulator.cpp.o: ../dromaius/libs/glfw/include/GLFW/glfw3.h
 CMakeFiles/dromaius.dir/dromaius/src/Emulator.cpp.o: ../dromaius/src/Emulator.cpp
 
+CMakeFiles/dromaius.dir/dromaius/src/main.cpp.o: ../dromaius/include/Emulator.hpp
+CMakeFiles/dromaius.dir/dromaius/src/main.cpp.o: ../dromaius/include/PCH.hpp
 CMakeFiles/dromaius.dir/dromaius/src/main.cpp.o: ../dromaius/include/glitter.hpp
 CMakeFiles/dromaius.dir/dromaius/src/main.cpp.o: ../dromaius/libs/glad/include/KHR/khrplatform.h
 CMakeFiles/dromaius.dir/dromaius/src/main.cpp.o: ../dromaius/libs/glad/include/glad/glad.h

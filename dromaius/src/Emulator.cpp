@@ -1,46 +1,36 @@
 #include "PCH.hpp"
-#include "glad/glad.h"
-#include <GLFW/glfw3.h>
+
 #include "Emulator.hpp"
 
 
-void Emulator::start(char* filename) {
+void Emulator::start(GLFWwindow* context) {
+	window = context;
 	DBG_INFO("Emulator starting");
 
-	createWindow();
+	// Create Context and Load OpenGL Functions
+    glfwMakeContextCurrent(window);
+    gladLoadGL();
 
-	while(!glfwWindowShouldClose(window))
-	{
-	    glfwSwapBuffers(window);
-	    glfwPollEvents();    
-	}
+    // Rendering Loop
+    while (glfwWindowShouldClose(window) == false) {
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetWindowShouldClose(window, true);
+            DBG_INFO("Window set to close");
+        }
 
+        // Background Fill Color
+        glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Flip Buffers and Draw
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
 
 	glfwTerminate();
 	return;
 }
 
-void Emulator::createWindow() {
- 	
-
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
-	if (window == NULL)
-	{
-	    DBG_SEVERE("Failed to create GLFW Window");
-	    glfwTerminate();
-	    return;
-	}
-	glfwMakeContextCurrent(window);
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-	    std::cout << "Failed to initialize GLAD" << std::endl;
-	    return;
-	}
-
-	glViewport(0, 0, 800, 600);
-
-}
 
 void Emulator::loadROM(char* romFilename) {
 
