@@ -1,1 +1,0 @@
-/usr/bin/c++    -Wall -Wextra -Wpedantic -std=c++11   CMakeFiles/dromaius.dir/dromaius/src/main.cpp.o CMakeFiles/dromaius.dir/dromaius/src/Emulator.cpp.o CMakeFiles/dromaius.dir/dromaius/libs/glad/src/glad.c.o  -o dromaius/dromaius -rdynamic dromaius/libs/glfw/src/libglfw3.a -ldl -lrt -lm -ldl -lX11 -lpthread 
