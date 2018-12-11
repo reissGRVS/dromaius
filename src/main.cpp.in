@@ -1,0 +1,27 @@
+//These are set by CMake
+#define Dromaius_VERSION_MAJOR @Dromaius_VERSION_MAJOR@
+#define Dromaius_VERSION_MINOR @Dromaius_VERSION_MINOR@
+
+#include <string>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "gameboy.h"
+
+int main(int argc, char* argv[]){
+
+	spdlog::set_level(spdlog::level::debug);
+	auto console = spdlog::stdout_color_mt("console");	
+	auto err_logger = spdlog::stderr_color_mt("stderr");
+
+	console->info("{}.{}", Dromaius_VERSION_MAJOR, Dromaius_VERSION_MINOR);
+	
+	//Get path to ROM
+	std::string rom_path = "defaultROM";
+	if (argc == 2){
+		rom_path = argv[1];
+		console->info("ROM Path set to: {}", rom_path);
+	}
+
+	//Create our Gameboy
+	Gameboy gb(rom_path);
+}

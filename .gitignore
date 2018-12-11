@@ -1,0 +1,7 @@
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CMakeFiles/
+.vscode/settings.json
+Dromaius
+*.o
