@@ -151,31 +151,31 @@ class CPU{
 
 				Byte& A = this->AF.first();
 				A &= byte;
-				this->setZFlag(A == 0) 
+				this->setZFlag(A == 0);
 			}
 
 			/* OR s
 			*/
 			void OR_A_r(Byte& byte){
 				this->setNFlag(false);
-				this->setCFlag(false);^
-				this->setHFlag(false);^
+				this->setCFlag(false);
+				this->setHFlag(false);
 
-				Byte& A = this->AF.fir^
+				Byte& A = this->AF.first();
 				A |= byte;
-				this->setZFlag(A == 0)^
+				this->setZFlag(A == 0);
 			}
 
 			/* XOR s
 			*/
 			void XOR_A_r(Byte& byte){
-				this->setNFlag(false);^
-				this->setCFlag(false);^
-				this->setHFlag(false);^
+				this->setNFlag(false);
+				this->setCFlag(false);
+				this->setHFlag(false);
 
 				Byte& A = this->AF.first();
 				A ^= byte;
-				this->setZFlag(A == 0) 
+				this->setZFlag(A == 0);
 			}
 
 			/* CP s - same as SUB but without update of A
