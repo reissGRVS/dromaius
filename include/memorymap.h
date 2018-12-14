@@ -27,7 +27,7 @@ class MemoryMap{
 		void setByte(const Word address, const Byte value) {
 			
 			if (address >= BOOT_ROM_SIZE) {
-				memory[address] == value;
+				memory[address] = value;
 			}
 			else {
 				spdlog::get("stderr")->error("Tried to write set read only byte {0:x}", address);

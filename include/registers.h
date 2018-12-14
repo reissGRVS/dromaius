@@ -5,7 +5,7 @@ class RegisterPair{
 	public:
 		RegisterPair(){
 		}
-
+ 
 		Word & word();
 		Byte & first(); 
 		Byte & second();
