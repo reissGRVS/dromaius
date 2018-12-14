@@ -5,3 +5,4 @@ CMakeFiles/
 .vscode/settings.json
 Dromaius
 *.o
+src/main.cpp

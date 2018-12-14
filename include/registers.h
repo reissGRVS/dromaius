@@ -4,16 +4,11 @@
 class RegisterPair{
 	public:
 		RegisterPair(){
-
 		}
 
-		Word getWord() const;
-		Byte getFirst() const; 
-		Byte getSecond() const;
-
-		void setWord(const Word w);
-		void setFirst(const Byte b);
-		void setSecond(const Byte b);
+		Word & word();
+		Byte & first(); 
+		Byte & second();
 
 	private:
 

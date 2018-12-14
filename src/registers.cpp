@@ -1,25 +1,13 @@
 #include "registers.h"
 
-Word RegisterPair::getWord() const{
+Word & RegisterPair::word() {
 	return reg.wordReg;
 }
 
-Byte RegisterPair::getFirst()const {
-	return reg.byteReg[0];
-}
-
-Byte RegisterPair::getSecond() const{
+Byte & RegisterPair::first() {
 	return reg.byteReg[1];
 }
 
-void RegisterPair::setWord(const Word w){
-	reg.wordReg = w;
-}
-
-void RegisterPair::setFirst(const Byte b){
-	reg.byteReg[0] = b;
-}
-
-void RegisterPair::setSecond(const Byte b){
-	reg.byteReg[1] = b;
+Byte & RegisterPair::second() {
+	return reg.byteReg[0];
 }

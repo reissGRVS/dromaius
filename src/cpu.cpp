@@ -1,44 +1,48 @@
 #include "cpu.h"
-#include "spdlog/spdlog.h"
 
 CPU::CPU(MemoryMap& gameboyMemory) :
 	memoryMap(gameboyMemory)
-{}
+{
+	// TODO: Add this as a test
+	// AF.setFirst(0x01);
+	// AF.setSecond(0x02);
+	// spdlog::get("console")->info("AF {}", AF.getWord());
+
+}
 
 void CPU::ping(){
 	spdlog::get("console")->info("CPU Ping");
 }
 
+Byte CPU::getNextByte(){
+	Word pc = PC.word();
+	return memoryMap.getByte(pc++);
+}
+
 Ticks CPU::process(){
-	//TESTING TODO REMOVE
-	
-	Operation testOp = instructionSet[0];
-	spdlog::get("console")->info("{} - Ticks {}", testOp.mnemonic, testOp.ticks);
-	testOp.action();
-	return testOp.ticks;
 
 	if (interruptsEnabled()){
 		handleInterruptRequest();
 	}
 
-	Word pc = PC.getWord();
-	Byte opcode = memoryMap.getByte(pc);
-	pc++;
+	Byte opcode = getNextByte();
+	const Operation * op = &instructionSet[opcode];
 	//If CB Prefix instruction
-	Operation op = instructionSet[opcode];
 	if (opcode == 0xCB) {
 		//get next opcode
-		Byte opcode = memoryMap.getByte(pc);
-		pc++;
+		opcode = getNextByte();
 		//get extended op
-
-	}
-	else{
-		//get normal op
-
+		op = &cbInstructionSet[opcode];
 	}
 
+	if (op->ticks == 0){
+		spdlog::get("stderr")->error("Not implemented: {0} - opCode {1:x}", op->mnemonic, opcode);
+		exit(0);
+	}
 
+	op->action();
+	
+	return op->ticks;
 }
 
 //TODO
