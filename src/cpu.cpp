@@ -15,7 +15,7 @@ void CPU::ping(){
 }
 
 Byte & CPU::getNextByte(){
-	Word pc = PC.word();
+	Word & pc = PC.word();
 	return memoryMap.byte(pc++);
 }
 
@@ -52,10 +52,8 @@ Ticks CPU::process(){
 		spdlog::get("stderr")->error("Not implemented: {0} - opCode {1:x}", op->mnemonic, opcode);
 		exit(0);
 	}
-	spdlog::get("console")->info("Opcode {:x} {}", opcode, op->mnemonic);
+	spdlog::get("console")->info("At loc {:x} Opcode {:x} {}", PC.word(), opcode, op->mnemonic);
 	op->action();
-	
-	PC.word()+=op->ticks;
 	return op->ticks;
 }
 
