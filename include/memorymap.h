@@ -20,6 +20,10 @@ class MemoryMap{
 
 		};
 
+		Byte & byte(Word address) {
+			return memory[address];
+		}
+
 		Byte getByte(Word address) const {
 			return memory[address];
 		};

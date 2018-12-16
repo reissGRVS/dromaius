@@ -14,9 +14,16 @@ void CPU::ping(){
 	spdlog::get("console")->info("CPU Ping");
 }
 
-Byte CPU::getNextByte(){
+Byte & CPU::getNextByte(){
 	Word pc = PC.word();
-	return memoryMap.getByte(pc++);
+	return memoryMap.byte(pc++);
+}
+
+//TODO: Make it clear the that getNextByte and getNextWord are not similar
+Word CPU::getNextWord(){
+	Byte low = this->getNextByte();
+	Byte high = this->getNextByte();
+	return ((high << 8) + low);
 }
 
 Ticks CPU::process(){

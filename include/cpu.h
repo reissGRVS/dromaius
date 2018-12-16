@@ -19,9 +19,12 @@ class CPU{
 		RegisterPair SP;
 		RegisterPair PC;
 
+		bool halt = false;
+
 		MemoryMap& memoryMap;
 		
-		Byte getNextByte();
+		Byte & getNextByte();
+		Word getNextWord();
 		bool interruptsEnabled() const;
 		void handleInterruptRequest();
 
@@ -39,6 +42,7 @@ class CPU{
 		void setZFlag(bool z){
 			setFlagBit(z, 0x80);
 		}
+
 		bool getZFlag(){
 			return this->AF.second() & 0x80;
 		}
@@ -88,6 +92,16 @@ class CPU{
 				destination = source;
 			}
 		
+		/***
+		16BIT LOADS
+		***/
+
+			/*
+			LD R,nn register <- immediate 16bit data
+			*/
+			void LD_r_nn(Word& reg){
+				reg = getNextWord();
+			}
 		/***
 		8BIT ALU
 		***/
@@ -143,7 +157,6 @@ class CPU{
 
 			/* AND s
 			*/
-
 			void AND_A_r(Byte& byte){
 				this->setNFlag(false);
 				this->setCFlag(false);
@@ -188,103 +201,240 @@ class CPU{
 				this->setZFlag((A-sub) == 0);
 			}
 			
-			
 			/* INC s
 			*/
 			void INC_r(Byte& byte){
+				this->setNFlag(false);
 				byte++;
+				this->setHFlag((byte & 0x0F) == 0);
+				this->setZFlag(byte == 0);
 			}
-
-			void DEC_r(Byte& byte){
-				byte--;
-			}
-
+			
 			/*  DEC s
 			*/
+			void DEC_r(Byte& byte){
+				this->setNFlag(true);
+				byte--;
+				this->setHFlag((byte & 0x0F) == 0);
+				this->setZFlag(byte == 0);
+			}
 
+		/***
+		16BIT ALU
+		***/
+
+			/* ADD HL,rr
+			*/
+			void ADD_HL_rr(Word& word){
+				Word HL = this->HL.word();
+				setNFlag(false);
+				setCFlag((HL+word) > 0xffff);
+				setHFlag((HL & 0x0fff) + (word & 0x0fff) > 0x0fff);
+				HL += word;
+			}
+
+
+			/* INC s
+			*/
+			void INC_rr(Word& word){
+				word++;
+			}
+			/*  DEC s
+			*/
+			void DEC_rr(Word& word){
+				word--;
+			}
+
+		/***
+		MISC
+		***/
+			/* CPL - invert A
+			*/
+			void CCF(){
+				setNFlag(true);
+				setHFlag(true);
+				AF.first() = ~AF.first(); 
+			}
+			
+			/* CCF - toggle carry flag
+			*/
+			void CCF(){
+				setNFlag(false);
+				setHFlag(false);
+				setCFlag(!getCFlag());
+			}
+			/* SCF - set carry flag to 1
+			*/
+			void SCF(){
+				setNFlag(false);
+				setHFlag(false);
+				setCFlag(true);
+			}
+
+			/*DAA
+			*/
+			void DAA(){
+				//TODO
+				setHFlag(false);
+			}
+
+		/***
+		JUMPS
+		***/
+			/* JP nn - PC <- nn
+			*/
+			void JP_nn(){
+				Word newLoc = getNextWord();
+				Word & oldLoc = this->PC.word();
+				if (newLoc == oldLoc){
+					spdlog::get("stderr")->error("Infinite JP instruction");
+					exit(0);
+				}
+				oldLoc = newLoc;
+			}
+
+			/* JP nn - PC <- nn
+			*/
+			void JP_cc_nn(bool condition){
+				//TODO: This only takes 12 if condition is false
+				if(condition){
+					JP_nn();
+				}
+			}
+			
+			void JR_n() {
+				SignedByte jumpSize = (SignedByte)getNextByte();
+
+				if(jumpSize==-2){ 
+					spdlog::get("stderr")->error("Infinite JR instruction");
+					exit(0); 
+				}
+
+				this->PC.word() += jumpSize;
+			}
+
+			void JR_cc_n(bool condition) {
+				//TODO: This only takes 8  if condition is false
+				if(condition){
+					JR_n();
+				}
+			}
+
+		/***
+		TODO ROTATES & SHIFTS
+		***/
+			/* RLC
+			*/
+			void RLC(Byte& byte){
+				
+			}
+
+			/* RL
+			*/
+			void RL(Byte& byte){
+				
+			}
+
+			/* RRC
+			*/
+			void RRC(Byte& byte){
+				
+			}
+			/* RR
+			*/
+			void RR(Byte& byte){
+				
+			}
+
+
+		
 		//OPCODES
 
 		const Operation instructionSet[0x100] = {
 			/*0x00*/	{"NOP", 4, [this](){}},
-			/*0x01*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x02*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x03*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x01*/	{"LD BC,nn", 12, [this](){ this->LD_r_nn(this->BC.word()); }},
+			/*0x02*/	{"LD (BC),A", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->BC.word()), this->AF.first()); }},
+			/*0x03*/	{"INC BC", 8, [this](){ this->INC_rr(this->BC.word()); }},
 			/*0x04*/	{"INC B", 4, [this](){ this->INC_r(this->BC.first()); }},
 			/*0x05*/	{"DEC B", 4, [this](){ this->DEC_r(this->BC.first()); }},
-			/*0x06*/	{"LD B, n", 8, [this](){ this->LD_r_n(this->BC.first()); }},
-			/*0x07*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x06*/	{"LD B,n", 8, [this](){ this->LD_r_n(this->BC.first()); }},
+			/*0x07*/	{"RLCA", 4, [this](){ this->RLC(this->AF.first()); setZFlag(false); }},
 
-			/*0x08*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x09*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x0A*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x0B*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x08*/	{"LD (a16),SP", 20, [this](){ 
+							//Store low
+							this->LD_r_r(this->memoryMap.byte(this->getNextByte()), this->SP.second());
+							//Store high
+							this->LD_r_r(this->memoryMap.byte(this->getNextByte()), this->SP.first());}},
+			/*0x09*/	{"ADD HL,BC", 8, [this](){ this->ADD_HL_rr(this->BC.word()); }},
+			/*0x0A*/	{"LD A, (BC)", 8, [this](){ this->LD_r_r(this->AF.first(), this->memoryMap.byte(this->BC.word())); }},
+			/*0x0B*/	{"DEC BC", 8, [this](){ this->DEC_rr(this->BC.word()); }},
 			/*0x0C*/	{"INC C", 4, [this](){ this->INC_r(this->BC.second()); }},
 			/*0x0D*/	{"DEC C", 4, [this](){ this->DEC_r(this->BC.second()); }},
 			/*0x0E*/	{"LD C, n", 8, [this](){ this->LD_r_n(this->BC.second()); }},
-			/*0x0F*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x0F*/	{"RRCA", 4, [this](){ this->RRC(this->AF.first()); setZFlag(false); }},
 			
-			/*0x10*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x11*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x12*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x13*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x10*/	{"STOP 0", 4, [this](){ /*TODO: Stop processor & screen until button press*/ }},
+			/*0x11*/	{"LD DE,nn", 12, [this](){ this->LD_r_nn(this->DE.word()); }},
+			/*0x12*/	{"LD (DE),A", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->DE.word()), this->AF.first()); }},
+			/*0x13*/	{"INC DE", 8, [this](){ this->INC_rr(this->DE.word()); }},
 			/*0x14*/	{"INC D", 4, [this](){ this->INC_r(this->DE.first()); }},
 			/*0x15*/	{"DEC D", 4, [this](){ this->DEC_r(this->DE.first()); }},
 			/*0x16*/	{"LD D, n", 8, [this](){ this->LD_r_n(this->DE.first()); }},
-			/*0x17*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x17*/	{"RLA", 4, [this](){ this->RL(this->AF.first()); setZFlag(false); }},
 
-			/*0x18*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x19*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x1A*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x1B*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x18*/	{"JR n", 12, [this](){ this->JR_n(); }},
+			/*0x19*/	{"ADD HL,DE", 8, [this](){ this->ADD_HL_rr(this->DE.word()); }},
+			/*0x1A*/	{"LD A,(DE)", 8, [this](){ this->LD_r_r(this->AF.first(), this->memoryMap.byte(this->DE.word())); }},
+			/*0x1B*/	{"DEC DE", 8, [this](){ this->DEC_rr(this->DE.word()); }},
 			/*0x1C*/	{"INC E", 4, [this](){ this->INC_r(this->DE.second()); }},
 			/*0x1D*/	{"DEC E", 4, [this](){ this->DEC_r(this->DE.second()); }},
 			/*0x1E*/	{"LD E, n", 8, [this](){ this->LD_r_n(this->DE.second()); }},
-			/*0x1F*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x1F*/	{"RRA", 4, [this](){ this->RR(this->AF.first()); setZFlag(false); }},
 
-			/*0x20*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x21*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x22*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x23*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x28*/	{"JR NZ,n", 12, [this](){ this->JR_cc_n(!this->getZFlag()); }},
+			/*0x21*/	{"LD HL,nn", 12, [this](){ this->LD_r_nn(this->HL.word()); }},
+			/*0x22*/	{"LD (HL+), A", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->HL.word()), this->AF.first()); this->INC_rr(this->HL.word());}},
+			/*0x23*/	{"INC HL", 8, [this](){ this->INC_rr(this->HL.word()); }},
 			/*0x24*/	{"INC H", 4, [this](){ this->INC_r(this->HL.first()); }},
 			/*0x25*/	{"DEC H", 4, [this](){ this->DEC_r(this->HL.first()); }},
 			/*0x26*/	{"LD H, n", 8, [this](){ this->LD_r_n(this->HL.first()); }},
-			/*0x27*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x27*/	{"DAA", 4, [this](){ this->DAA(); }}, 
 
-			/*0x28*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x29*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x2A*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x2B*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x28*/	{"JR Z,n", 12, [this](){ this->JR_cc_n(this->getZFlag()); }},
+			/*0x29*/	{"ADD HL,HL", 8, [this](){ this->ADD_HL_rr(this->HL.word()); }},
+			/*0x2A*/	{"LD A,(HL+)", 8, [this](){ this->LD_r_r(this->AF.first(), this->memoryMap.byte(this->HL.word())); this->INC_rr(this->HL.word());}},
+			/*0x2B*/	{"DEC HL", 8, [this](){ this->DEC_rr(this->HL.word()); }},
 			/*0x2C*/	{"INC L", 4, [this](){ this->INC_r(this->HL.second()); }},
 			/*0x2D*/	{"DEC L", 4, [this](){ this->DEC_r(this->HL.second()); }},
 			/*0x2E*/	{"LD L, n", 8, [this](){ this->LD_r_n(this->HL.second()); }},
-			/*0x2F*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x2F*/	{"CPL", 4, [this](){ this->CPL(); }},
 
-			/*0x30*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x31*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x32*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x33*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x34*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x35*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x36*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x37*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x38*/	{"JR NC,n", 12, [this](){ this->JR_cc_n(!this->getCFlag()); }},
+			/*0x31*/	{"LD SP,nn", 12, [this](){ this->LD_r_nn(this->SP.word()); }},
+			/*0x32*/	{"LD (HL-), A", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->HL.word()), this->AF.first()); this->DEC_rr(this->HL.word());}},
+			/*0x33*/	{"INC SP", 8, [this](){ this->INC_rr(this->SP.word()); }},
+			/*0x34*/	{"INC (HL)", 12, [this](){ this->INC_r(this->memoryMap.byte(this->HL.word())); }},
+			/*0x35*/	{"DEC (HL)", 12, [this](){ this->DEC_r(this->memoryMap.byte(this->HL.word())); }},
+			/*0x36*/	{"LD (HL), n", 12, [this](){ this->LD_r_n(this->memoryMap.byte(this->HL.word())); }},
+			/*0x37*/	{"SCF", 4, [this](){ this->SCF(); }},
 
-			/*0x38*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x39*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x3A*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x3B*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x38*/	{"JR C,n", 12, [this](){ this->JR_cc_n(this->getCFlag()); }},
+			/*0x39*/	{"ADD HL,SP", 8, [this](){ this->ADD_HL_rr(this->SP.word()); }},
+			/*0x3A*/	{"LD A,(HL-)", 8, [this](){ this->LD_r_r(this->AF.first(), this->memoryMap.byte(this->HL.word())); this->DEC_rr(this->HL.word());}},
+			/*0x3B*/	{"DEC SP", 8, [this](){ this->DEC_rr(this->SP.word()); }},
 			/*0x3C*/	{"INC A", 4, [this](){ this->INC_r(this->AF.first()); }},
 			/*0x3D*/	{"DEC A", 4, [this](){ this->DEC_r(this->AF.first()); }},
-			/*0x3E*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x3F*/	{"???", 0, [this](){ this->ping(); }},
-
+			/*0x3E*/	{"LD A, n", 8, [this](){ this->LD_r_n(this->AF.first()); }},
+			/*0x3F*/	{"CCF", 4, [this](){ this->CCF(); }},
+// COMPLETED
 			/*0x40*/	{"LD B,B", 4, [this](){ this->LD_r_r(this->BC.first(), this->BC.first());}},
 			/*0x41*/	{"LD B,C", 4, [this](){ this->LD_r_r(this->BC.first(), this->BC.second());}},
 			/*0x42*/	{"LD B,D", 4, [this](){ this->LD_r_r(this->BC.first(), this->DE.first());}},
 			/*0x43*/	{"LD B,E", 4, [this](){ this->LD_r_r(this->BC.first(), this->DE.second());}},
 			/*0x44*/	{"LD B,H", 4, [this](){ this->LD_r_r(this->BC.first(), this->HL.first());}},
 			/*0x45*/	{"LD B,L", 4, [this](){ this->LD_r_r(this->BC.first(), this->HL.second());}},
-			/*0x46*/	{"LD B,(HL)", 0, [this](){ this->ping(); }},
-			/*0x47*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x46*/	{"LD B,(HL)", 8, [this](){ this->LD_r_r(this->BC.first(), this->memoryMap.byte(this->HL.word())); }},
+			/*0x47*/	{"LD B,A", 4, [this](){ this->LD_r_r(this->BC.first(), this->AF.first());}},
 
 			/*0x48*/	{"LD C,B", 4, [this](){ this->LD_r_r(this->BC.second(), this->BC.first());}},
 			/*0x49*/	{"LD C,C", 4, [this](){ this->LD_r_r(this->BC.second(), this->BC.second());}},
@@ -292,8 +442,8 @@ class CPU{
 			/*0x4B*/	{"LD C,E", 4, [this](){ this->LD_r_r(this->BC.second(), this->DE.second());}},
 			/*0x4C*/	{"LD C,H", 4, [this](){ this->LD_r_r(this->BC.second(), this->HL.first());}},
 			/*0x4D*/	{"LD C,L", 4, [this](){ this->LD_r_r(this->BC.second(), this->HL.second());}},
-			/*0x4E*/	{"LD C,(HL)", 0, [this](){ this->ping(); }},
-			/*0x4F*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x4E*/	{"LD C,(HL)", 8, [this](){ this->LD_r_r(this->BC.second(), this->memoryMap.byte(this->HL.word())); }},
+			/*0x4F*/	{"LD C,A", 4, [this](){ this->LD_r_r(this->BC.second(), this->AF.first());}},
 
 			/*0x50*/	{"LD D,B", 4, [this](){ this->LD_r_r(this->DE.first(), this->BC.first());}},
 			/*0x51*/	{"LD D,C", 4, [this](){ this->LD_r_r(this->DE.first(), this->BC.second());}},
@@ -301,8 +451,8 @@ class CPU{
 			/*0x53*/	{"LD D,E", 4, [this](){ this->LD_r_r(this->DE.first(), this->DE.second());}},
 			/*0x54*/	{"LD D,H", 4, [this](){ this->LD_r_r(this->DE.first(), this->HL.first());}},
 			/*0x55*/	{"LD D,L", 4, [this](){ this->LD_r_r(this->DE.first(), this->HL.second());}},
-			/*0x56*/	{"LD D,(HL)", 0, [this](){ this->ping(); }},
-			/*0x57*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x56*/	{"LD D,(HL)", 8, [this](){ this->LD_r_r(this->DE.first(), this->memoryMap.byte(this->HL.word())); }},
+			/*0x57*/	{"LD D,A", 4, [this](){ this->LD_r_r(this->DE.first(), this->AF.first());}},
 
 			/*0x58*/	{"LD E,B", 4, [this](){ this->LD_r_r(this->DE.second(), this->BC.first());}},
 			/*0x59*/	{"LD E,C", 4, [this](){ this->LD_r_r(this->DE.second(), this->BC.second());}},
@@ -310,8 +460,8 @@ class CPU{
 			/*0x5B*/	{"LD E,E", 4, [this](){ this->LD_r_r(this->DE.second(), this->DE.second());}},
 			/*0x5C*/	{"LD E,H", 4, [this](){ this->LD_r_r(this->DE.second(), this->HL.first());}},
 			/*0x5D*/	{"LD E,L", 4, [this](){ this->LD_r_r(this->DE.second(), this->HL.second());}},
-			/*0x5E*/	{"LD E,(HL)", 0, [this](){ this->ping(); }},
-			/*0x5F*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x5E*/	{"LD E,(HL)", 8, [this](){ this->LD_r_r(this->DE.second(), this->memoryMap.byte(this->HL.word())); }},
+			/*0x5F*/	{"LD E,A", 4, [this](){ this->LD_r_r(this->DE.second(), this->AF.first());}},
 
 			/*0x60*/	{"LD H,B", 4, [this](){ this->LD_r_r(this->HL.first(), this->BC.first());}},
 			/*0x61*/	{"LD H,C", 4, [this](){ this->LD_r_r(this->HL.first(), this->BC.second());}},
@@ -319,8 +469,8 @@ class CPU{
 			/*0x63*/	{"LD H,E", 4, [this](){ this->LD_r_r(this->HL.first(), this->DE.second());}},
 			/*0x64*/	{"LD H,H", 4, [this](){ this->LD_r_r(this->HL.first(), this->HL.first());}},
 			/*0x65*/	{"LD H,L", 4, [this](){ this->LD_r_r(this->HL.first(), this->HL.second());}},
-			/*0x66*/	{"LD H,(HL)", 0, [this](){ this->ping(); }},
-			/*0x67*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x66*/	{"LD H,(HL)", 8, [this](){ this->LD_r_r(this->HL.first(), this->memoryMap.byte(this->HL.word())); }},
+			/*0x67*/	{"LD H,A", 4, [this](){ this->LD_r_r(this->HL.first(), this->AF.first());}},
 
 			/*0x68*/	{"LD L,B", 4, [this](){ this->LD_r_r(this->HL.second(), this->BC.first());}},
 			/*0x69*/	{"LD L,C", 4, [this](){ this->LD_r_r(this->HL.second(), this->BC.second());}},
@@ -328,17 +478,17 @@ class CPU{
 			/*0x6B*/	{"LD L,E", 4, [this](){ this->LD_r_r(this->HL.second(), this->DE.second());}},
 			/*0x6C*/	{"LD L,H", 4, [this](){ this->LD_r_r(this->HL.second(), this->HL.first());}},
 			/*0x6D*/	{"LD L,L", 4, [this](){ this->LD_r_r(this->HL.second(), this->HL.second());}},
-			/*0x6E*/	{"LD L,(HL)", 0, [this](){ this->ping(); }},
-			/*0x6F*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x6E*/	{"LD L,(HL)", 8, [this](){ this->LD_r_r(this->HL.second(), this->memoryMap.byte(this->HL.word())); }},
+			/*0x6F*/	{"LD L,A", 4, [this](){ this->LD_r_r(this->HL.second(), this->AF.first());}},
 
-			/*0x70*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x71*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x72*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x73*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x74*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x75*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x76*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x77*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x70*/	{"LD (HL), B", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->HL.word()), this->BC.first());}},
+			/*0x71*/	{"LD (HL), C", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->HL.word()), this->BC.second());}},
+			/*0x72*/	{"LD (HL), D", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->HL.word()), this->DE.first());}},
+			/*0x73*/	{"LD (HL), E", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->HL.word()), this->DE.second());}},
+			/*0x74*/	{"LD (HL), H", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->HL.word()), this->HL.first());}},
+			/*0x75*/	{"LD (HL), L", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->HL.word()), this->HL.second());}},
+			/*0x76*/	{"HALT", 4, [this](){halt=true;}},
+			/*0x77*/	{"LD (HL), A", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->HL.word()), this->AF.first());}},
 
 			/*0x78*/	{"LD A, B", 4, [this](){ this->LD_r_r(this->AF.first(), this->BC.first());}},
 			/*0x79*/	{"LD A, C", 4, [this](){ this->LD_r_r(this->AF.first(), this->BC.second());}},
@@ -346,7 +496,7 @@ class CPU{
 			/*0x7B*/	{"LD A, E", 4, [this](){ this->LD_r_r(this->AF.first(), this->DE.second());}},
 			/*0x7C*/	{"LD A, H", 4, [this](){ this->LD_r_r(this->AF.first(), this->HL.first());}},
 			/*0x7D*/	{"LD A, L", 4, [this](){ this->LD_r_r(this->AF.first(), this->HL.second());}},
-			/*0x7E*/	{"LD A, (HL) ?", 0, [this](){ this->ping(); }},
+			/*0x7E*/	{"LD A,(HL)", 8, [this](){ this->LD_r_r(this->AF.first(), this->memoryMap.byte(this->HL.word())); }},
 			/*0x7F*/	{"LD A, A", 4, [this](){ this->LD_r_r(this->AF.first(), this->AF.first());}},
 
 			/*0x80*/	{"ADD A,B", 4, [this](){ this->ADD_A_r(this->BC.first()); }},
@@ -355,7 +505,7 @@ class CPU{
 			/*0x83*/	{"ADD A,E", 4, [this](){ this->ADD_A_r(this->DE.second()); }},
 			/*0x84*/	{"ADD A,H", 4, [this](){ this->ADD_A_r(this->HL.first()); }},
 			/*0x85*/	{"ADD A,L", 4, [this](){ this->ADD_A_r(this->HL.second()); }},
-			/*0x86*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x86*/	{"ADD A,(HL)", 8, [this](){ this->ADD_A_r(this->memoryMap.byte(this->HL.word())); }},
 			/*0x87*/	{"ADD A,A", 4, [this](){ this->ADD_A_r(this->AF.first()); }},
 
 			/*0x88*/	{"ADC A,B", 4, [this](){ this->ADC_A_r(this->BC.first()); }},
@@ -364,26 +514,26 @@ class CPU{
 			/*0x8B*/	{"ADC A,E", 4, [this](){ this->ADC_A_r(this->DE.second()); }},
 			/*0x8C*/	{"ADC A,H", 4, [this](){ this->ADC_A_r(this->HL.first()); }},
 			/*0x8D*/	{"ADC A,L", 4, [this](){ this->ADC_A_r(this->HL.second()); }},
-			/*0x8E*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x8E*/	{"ADC A,(HL)", 8, [this](){ this->ADC_A_r(this->memoryMap.byte(this->HL.word())); }},
 			/*0x8F*/	{"ADC A,A", 4, [this](){ this->ADC_A_r(this->AF.first()); }},
 
-			/*0x80*/	{"SUB A,B", 4, [this](){ this->SUB_A_r(this->BC.first()); }},
-			/*0x81*/	{"SUB A,C", 4, [this](){ this->SUB_A_r(this->BC.second()); }},
-			/*0x82*/	{"SUB A,D", 4, [this](){ this->SUB_A_r(this->DE.first()); }},
-			/*0x83*/	{"SUB A,E", 4, [this](){ this->SUB_A_r(this->DE.second()); }},
-			/*0x84*/	{"SUB A,H", 4, [this](){ this->SUB_A_r(this->HL.first()); }},
-			/*0x85*/	{"SUB A,L", 4, [this](){ this->SUB_A_r(this->HL.second()); }},
-			/*0x86*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x87*/	{"SUB A,A", 4, [this](){ this->SUB_A_r(this->AF.first()); }},
+			/*0x90*/	{"SUB A,B", 4, [this](){ this->SUB_A_r(this->BC.first()); }},
+			/*0x91*/	{"SUB A,C", 4, [this](){ this->SUB_A_r(this->BC.second()); }},
+			/*0x92*/	{"SUB A,D", 4, [this](){ this->SUB_A_r(this->DE.first()); }},
+			/*0x93*/	{"SUB A,E", 4, [this](){ this->SUB_A_r(this->DE.second()); }},
+			/*0x94*/	{"SUB A,H", 4, [this](){ this->SUB_A_r(this->HL.first()); }},
+			/*0x95*/	{"SUB A,L", 4, [this](){ this->SUB_A_r(this->HL.second()); }},
+			/*0x96*/	{"SUB A,(HL)", 8, [this](){ this->SUB_A_r(this->memoryMap.byte(this->HL.word())); }},
+			/*0x97*/	{"SUB A,A", 4, [this](){ this->SUB_A_r(this->AF.first()); }},
 
-			/*0x88*/	{"SBC A,B", 4, [this](){ this->SBC_A_r(this->BC.first()); }},
-			/*0x89*/	{"SBC A,C", 4, [this](){ this->SBC_A_r(this->BC.second()); }},
-			/*0x8A*/	{"SBC A,D", 4, [this](){ this->SBC_A_r(this->DE.first()); }},
-			/*0x8B*/	{"SBC A,E", 4, [this](){ this->SBC_A_r(this->DE.second()); }},
-			/*0x8C*/	{"SBC A,H", 4, [this](){ this->SBC_A_r(this->HL.first()); }},
-			/*0x8D*/	{"SBC A,L", 4, [this](){ this->SBC_A_r(this->HL.second()); }},
-			/*0x8E*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x8F*/	{"SBC A,A", 4, [this](){ this->SBC_A_r(this->AF.first()); }},
+			/*0x98*/	{"SBC A,B", 4, [this](){ this->SBC_A_r(this->BC.first()); }},
+			/*0x99*/	{"SBC A,C", 4, [this](){ this->SBC_A_r(this->BC.second()); }},
+			/*0x9A*/	{"SBC A,D", 4, [this](){ this->SBC_A_r(this->DE.first()); }},
+			/*0x9B*/	{"SBC A,E", 4, [this](){ this->SBC_A_r(this->DE.second()); }},
+			/*0x9C*/	{"SBC A,H", 4, [this](){ this->SBC_A_r(this->HL.first()); }},
+			/*0x9D*/	{"SBC A,L", 4, [this](){ this->SBC_A_r(this->HL.second()); }},
+			/*0x9E*/	{"SBC A,(HL)", 8, [this](){ this->SBC_A_r(this->memoryMap.byte(this->HL.word())); }},
+			/*0x9F*/	{"SBC A,A", 4, [this](){ this->SBC_A_r(this->AF.first()); }},
 
 			/*0xA0*/	{"AND A,B", 4, [this](){ this->AND_A_r(this->BC.first()); }},
 			/*0xA1*/	{"AND A,C", 4, [this](){ this->AND_A_r(this->BC.second()); }},
@@ -391,7 +541,7 @@ class CPU{
 			/*0xA3*/	{"AND A,E", 4, [this](){ this->AND_A_r(this->DE.second()); }},
 			/*0xA4*/	{"AND A,H", 4, [this](){ this->AND_A_r(this->HL.first()); }},
 			/*0xA5*/	{"AND A,L", 4, [this](){ this->AND_A_r(this->HL.second()); }},
-			/*0xA6*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xA6*/	{"AND A,(HL)", 8, [this](){ this->AND_A_r(this->memoryMap.byte(this->HL.word())); }},
 			/*0xA7*/	{"AND A,A", 4, [this](){ this->AND_A_r(this->AF.first()); }},
 			
 
@@ -401,7 +551,7 @@ class CPU{
 			/*0xAB*/	{"XOR A,E", 4, [this](){ this->XOR_A_r(this->DE.second()); }},
 			/*0xAC*/	{"XOR A,H", 4, [this](){ this->XOR_A_r(this->HL.first()); }},
 			/*0xAD*/	{"XOR A,L", 4, [this](){ this->XOR_A_r(this->HL.second()); }},
-			/*0xAE*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xAE*/	{"XOR A,(HL)", 8, [this](){ this->XOR_A_r(this->memoryMap.byte(this->HL.word())); }},
 			/*0xAF*/	{"XOR A,A", 4, [this](){ this->XOR_A_r(this->AF.first()); }},
 
 			/*0xB0*/	{"OR A,B", 4, [this](){ this->OR_A_r(this->BC.first()); }},
@@ -410,7 +560,7 @@ class CPU{
 			/*0xB3*/	{"OR A,E", 4, [this](){ this->OR_A_r(this->DE.second()); }},
 			/*0xB4*/	{"OR A,H", 4, [this](){ this->OR_A_r(this->HL.first()); }},
 			/*0xB5*/	{"OR A,L", 4, [this](){ this->OR_A_r(this->HL.second()); }},
-			/*0xB6*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xB6*/	{"OR A,(HL)", 8, [this](){ this->OR_A_r(this->memoryMap.byte(this->HL.word())); }},
 			/*0xB7*/	{"OR A,A", 4, [this](){ this->OR_A_r(this->AF.first()); }},
 
 			/*0xB8*/	{"CP A,B", 4, [this](){ this->CP_A_r(this->BC.first()); }},
@@ -419,16 +569,16 @@ class CPU{
 			/*0xBB*/	{"CP A,E", 4, [this](){ this->CP_A_r(this->DE.second()); }},
 			/*0xBC*/	{"CP A,H", 4, [this](){ this->CP_A_r(this->HL.first()); }},
 			/*0xBD*/	{"CP A,L", 4, [this](){ this->CP_A_r(this->HL.second()); }},
-			/*0xBE*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xBE*/	{"CP A,(HL)", 8, [this](){ this->CP_A_r(this->memoryMap.byte(this->HL.word())); }},
 			/*0xBF*/	{"CP A,A", 4, [this](){ this->CP_A_r(this->AF.first()); }},
-
+//
 			/*0xC0*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xC1*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xC2*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xC3*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xC4*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xC5*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xC6*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xC6*/	{"ADD A,d8", 8, [this](){ this->ADD_A_r(this->getNextByte()); }},
 			/*0xC7*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xC8*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xC9*/	{"???", 0, [this](){ this->ping(); }},
@@ -436,7 +586,7 @@ class CPU{
 			/*0xCB*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xCC*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xCD*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xCE*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xCE*/	{"ADC A,d8", 8, [this](){ this->ADC_A_r(this->getNextByte()); }},
 			/*0xCF*/	{"???", 0, [this](){ this->ping(); }},
 
 			/*0xD0*/	{"???", 0, [this](){ this->ping(); }},
@@ -445,7 +595,7 @@ class CPU{
 			/*0xD3*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xD4*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xD5*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xD6*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xD6*/	{"SUB A,d8", 8, [this](){ this->SUB_A_r(this->getNextByte()); }},
 			/*0xD7*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xD8*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xD9*/	{"???", 0, [this](){ this->ping(); }},
@@ -453,7 +603,7 @@ class CPU{
 			/*0xDB*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xDC*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xDD*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xDE*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xDE*/	{"SBC A,d8", 8, [this](){ this->SBC_A_r(this->getNextByte());}},
 			/*0xDF*/	{"???", 0, [this](){ this->ping(); }},
 
 			/*0xE0*/	{"???", 0, [this](){ this->ping(); }},
@@ -462,7 +612,7 @@ class CPU{
 			/*0xE3*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xE4*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xE5*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xE6*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xE6*/	{"AND A,d8", 8, [this](){ this->AND_A_r(this->getNextByte()); }},
 			/*0xE7*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xE8*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xE9*/	{"???", 0, [this](){ this->ping(); }},
@@ -470,7 +620,7 @@ class CPU{
 			/*0xEB*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xEC*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xED*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xEE*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xEE*/	{"XOR A,d8", 8, [this](){ this->XOR_A_r(this->getNextByte()); }},
 			/*0xEF*/	{"???", 0, [this](){ this->ping(); }},
 
 			/*0xF0*/	{"???", 0, [this](){ this->ping(); }},
@@ -479,7 +629,7 @@ class CPU{
 			/*0xF3*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xF4*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xF5*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xF6*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xF6*/	{"OR A,d8", 8, [this](){ this->OR_A_r(this->getNextByte()); }},
 			/*0xF7*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xF8*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xF9*/	{"???", 0, [this](){ this->ping(); }},
@@ -487,7 +637,7 @@ class CPU{
 			/*0xFB*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xFC*/	{"???", 0, [this](){ this->ping(); }},
 			/*0xFD*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xFE*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xF6*/	{"CP A,d8", 8, [this](){ this->CP_A_r(this->getNextByte()); }},
 			/*0xFF*/	{"???", 0, [this](){ this->ping(); }},
 		};
 
