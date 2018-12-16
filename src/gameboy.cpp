@@ -6,5 +6,8 @@ Gameboy::Gameboy(std::string rom_name) :
 {
 	spdlog::get("console")->info("Powering up Gameboy");
 	//TODO: Load rom with rom_name
-	cpu.process();
+	while(true){	
+		cpu.process();
+		
+	}
 }

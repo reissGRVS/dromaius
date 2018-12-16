@@ -21,8 +21,13 @@ Byte & CPU::getNextByte(){
 
 //TODO: Make it clear the that getNextByte and getNextWord are not similar
 Word CPU::getNextWord(){
+
 	Byte low = this->getNextByte();
 	Byte high = this->getNextByte();
+	return composeWord(high, low);
+}
+
+Word CPU::composeWord(Byte high, Byte low){
 	return ((high << 8) + low);
 }
 
@@ -40,21 +45,23 @@ Ticks CPU::process(){
 		opcode = getNextByte();
 		//get extended op
 		op = &cbInstructionSet[opcode];
+		spdlog::get("console")->info("OpcodeCB {:x} {}", opcode, op->mnemonic);
 	}
 
 	if (op->ticks == 0){
 		spdlog::get("stderr")->error("Not implemented: {0} - opCode {1:x}", op->mnemonic, opcode);
 		exit(0);
 	}
-
+	spdlog::get("console")->info("Opcode {:x} {}", opcode, op->mnemonic);
 	op->action();
 	
+	PC.word()+=op->ticks;
 	return op->ticks;
 }
 
 //TODO
 bool CPU::interruptsEnabled() const{
-	return false;
+	return IE;
 }
 
 //TODO

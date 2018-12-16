@@ -20,11 +20,15 @@ class CPU{
 		RegisterPair PC;
 
 		bool halt = false;
-
+		//Interrupts enabled
+		bool IE = false;
+		
 		MemoryMap& memoryMap;
 		
 		Byte & getNextByte();
 		Word getNextWord();
+		Word composeWord(Byte high, Byte low);
+
 		bool interruptsEnabled() const;
 		void handleInterruptRequest();
 
@@ -91,7 +95,6 @@ class CPU{
 			void LD_r_r(Byte& destination, Byte& source){
 				destination = source;
 			}
-		
 		/***
 		16BIT LOADS
 		***/
@@ -101,6 +104,25 @@ class CPU{
 			*/
 			void LD_r_nn(Word& reg){
 				reg = getNextWord();
+			}
+
+			void LD_rr_rr(Word& destination, Word source){
+				destination = source;
+			}
+
+			void POP_rr(Word& reg){
+				Word& stackPointer = this->SP.word();
+				Byte low = this->memoryMap.getByte(stackPointer++);
+				Byte high = this->memoryMap.getByte(stackPointer++);
+				reg = composeWord(high, low);
+			}
+
+			void PUSH_rr(RegisterPair& reg){
+				Word& stackPointer = this->SP.word();
+				stackPointer--;
+				this->memoryMap.setByte(stackPointer, reg.first());
+				stackPointer--;
+				this->memoryMap.setByte(stackPointer, reg.second());
 			}
 		/***
 		8BIT ALU
@@ -204,19 +226,19 @@ class CPU{
 			/* INC s
 			*/
 			void INC_r(Byte& byte){
-				this->setNFlag(false);
+				setNFlag(false);
 				byte++;
-				this->setHFlag((byte & 0x0F) == 0);
-				this->setZFlag(byte == 0);
+				setHFlag((byte & 0x0F) == 0);
+				setZFlag(byte == 0);
 			}
 			
 			/*  DEC s
 			*/
 			void DEC_r(Byte& byte){
-				this->setNFlag(true);
+				setNFlag(true);
 				byte--;
-				this->setHFlag((byte & 0x0F) == 0);
-				this->setZFlag(byte == 0);
+				setHFlag((byte & 0x0F) == 0);
+				setZFlag(byte == 0);
 			}
 
 		/***
@@ -226,13 +248,37 @@ class CPU{
 			/* ADD HL,rr
 			*/
 			void ADD_HL_rr(Word& word){
-				Word HL = this->HL.word();
+				Word & HLval = HL.word();
 				setNFlag(false);
-				setCFlag((HL+word) > 0xffff);
-				setHFlag((HL & 0x0fff) + (word & 0x0fff) > 0x0fff);
-				HL += word;
+				setCFlag((HLval+word) > 0xffff);
+				setHFlag((HLval & 0x0fff) + (word & 0x0fff) > 0x0fff);
+				HLval += word;
 			}
 
+			Word ADD_SP_s_result(){
+				SignedByte& byte = (SignedByte&)getNextByte();
+				Word & stackPointer = SP.word();
+				Word result = static_cast<Word>(stackPointer + byte);
+
+				setZFlag(false);
+				setNFlag(false);
+
+				if (byte >= 0) {
+					setCFlag(((result & 0xFF) + byte) > 0xFF);
+					setHFlag(((result & 0x0F) + (byte & 0x0F)) > 0xF);
+				}
+				else {
+					setCFlag((stackPointer & 0xFF) <= (result & 0xFF));
+					setHFlag((stackPointer & 0xF) <= (result & 0xF));
+				}
+				return result;
+			}
+
+			/* ADD SP,s
+			*/
+			void ADD_SP_s(){
+				SP.word() = ADD_SP_s_result();
+			}
 
 			/* INC s
 			*/
@@ -248,9 +294,16 @@ class CPU{
 		/***
 		MISC
 		***/
+
+			void EI(){
+				IE = true;
+			}
+			void DI(){
+				IE = false;
+			}
 			/* CPL - invert A
 			*/
-			void CCF(){
+			void CPL(){
 				setNFlag(true);
 				setHFlag(true);
 				AF.first() = ~AF.first(); 
@@ -271,21 +324,61 @@ class CPU{
 				setCFlag(true);
 			}
 
-			/*DAA
+			/*DAA - This may not work at all
 			*/
 			void DAA(){
-				//TODO
+				spdlog::get("console")->error("DAA has been called");
+				Byte & A = AF.first();
+				if ((A & 0x0f) > 9 || getHFlag()) {
+					A += 0x06;
+				}
+				if ((A & 0xf0) > 0x90 || getCFlag()) {
+					A += 0x60;
+					setCFlag(true);
+				}
+
+				setZFlag(A == 0);
 				setHFlag(false);
 			}
 
 		/***
 		JUMPS
 		***/
+
+			/* RST f
+			*/
+			void RST(Byte f){
+				PUSH_rr(this->PC);
+				PC.word() = f;
+			}
+
+			void CALL_nn(){
+				PUSH_rr(this->PC);
+				PC.word() = getNextWord();
+			}
+
+			//TODO different cycles if false 
+			void CALL_cc_nn(bool condition){
+				if(condition){
+					CALL_nn();
+				}
+			}
+
+			//Only used for PC <- HL	 0xE9
+			void JP_rr(Word newLoc){
+				Word & oldLoc = PC.word();
+				if (newLoc == oldLoc){
+					spdlog::get("stderr")->error("Infinite JP instruction");
+					exit(0);
+				}
+				oldLoc = newLoc;
+			}
+
 			/* JP nn - PC <- nn
 			*/
 			void JP_nn(){
 				Word newLoc = getNextWord();
-				Word & oldLoc = this->PC.word();
+				Word & oldLoc = PC.word();
 				if (newLoc == oldLoc){
 					spdlog::get("stderr")->error("Infinite JP instruction");
 					exit(0);
@@ -321,33 +414,75 @@ class CPU{
 			}
 
 		/***
-		TODO ROTATES & SHIFTS
+		ROTATES & SHIFTS
 		***/
+
+			Byte getBit(Byte byte, Byte bit){
+				return (byte >> bit) & 1;
+			}
 			/* RLC
 			*/
 			void RLC(Byte& byte){
-				
+				Byte carrybit =  getBit(byte, 7);
+				byte = (byte << 1) + carrybit;
+				setCFlag(carrybit);
+				setZFlag(byte == 0);
+				setNFlag(false);
+				setHFlag(false);
 			}
 
 			/* RL
 			*/
 			void RL(Byte& byte){
-				
+				Byte carrybit =  getBit(byte, 7);
+				Byte firstbit = getCFlag() ? 1 : 0;
+				byte = (byte << 1) + firstbit;
+				setCFlag(carrybit);
+				setZFlag(byte == 0);
+				setNFlag(false);
+				setHFlag(false);
 			}
 
 			/* RRC
 			*/
 			void RRC(Byte& byte){
-				
+				Byte carrybit =  getBit(byte, 0);
+				byte = (byte >> 1) + (carrybit << 7);
+				setCFlag(carrybit);
+				setZFlag(byte == 0);
+				setNFlag(false);
+				setHFlag(false);
 			}
 			/* RR
 			*/
 			void RR(Byte& byte){
-				
+				Byte carrybit = getBit(byte, 0);
+				Byte lastbit = getCFlag() ? 1 : 0;
+				byte = (byte >> 1) + (lastbit << 7);
+				setCFlag(carrybit);
+				setZFlag(byte == 0);
+				setNFlag(false);
+				setHFlag(false);
+			}
+		/***
+		RETURNS
+		***/
+
+			void RET(){
+				POP_rr(this->PC.word());
 			}
 
-
+			void RET_cc(bool condition){
+				//TODO: only 8 if not condition
+				if (condition){
+					POP_rr(this->PC.word());
+				}
+			}
 		
+			void RETI(){
+				POP_rr(this->PC.word());
+				EI();
+			}
 		//OPCODES
 
 		const Operation instructionSet[0x100] = {
@@ -572,109 +707,109 @@ class CPU{
 			/*0xBE*/	{"CP A,(HL)", 8, [this](){ this->CP_A_r(this->memoryMap.byte(this->HL.word())); }},
 			/*0xBF*/	{"CP A,A", 4, [this](){ this->CP_A_r(this->AF.first()); }},
 //
-			/*0xC0*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xC1*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xC2*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xC3*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xC4*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xC5*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xC0*/	{"RET NZ", 20, [this](){ this->RET_cc(!this->getZFlag()); }},
+			/*0xC1*/	{"POP BC", 12, [this](){ this->POP_rr(this->BC.word()); }},
+			/*0xC2*/	{"JP NZ,a16", 16, [this](){ this->JP_cc_nn(!this->getZFlag()); }},
+			/*0xC3*/	{"JP a16", 16, [this](){ this->JP_nn(); }},
+			/*0xC4*/	{"CALL NZ,a16", 24, [this](){ this->CALL_cc_nn(!this->getZFlag()); }},
+			/*0xC5*/	{"PUSH BC", 16, [this](){ this->PUSH_rr(this->BC); }},
 			/*0xC6*/	{"ADD A,d8", 8, [this](){ this->ADD_A_r(this->getNextByte()); }},
-			/*0xC7*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xC8*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xC9*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xCA*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xCB*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xCC*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xCD*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xC7*/	{"RST 00H", 16, [this](){ this->RST(0x00); }},
+			/*0xC8*/	{"RET Z", 20, [this](){ this->RET_cc(this->getZFlag()); }},
+			/*0xC9*/	{"RET", 16, [this](){ this->RET(); }},
+			/*0xCA*/	{"JP Z,a16", 16, [this](){ this->JP_cc_nn(this->getZFlag()); }},
+			/*0xCB*/	{"CB", 0, [this](){}},
+			/*0xCC*/	{"CALL Z,a16", 24, [this](){ this->CALL_cc_nn(this->getZFlag()); }},
+			/*0xCD*/	{"CALL a16", 24, [this](){ this->CALL_nn(); }},
 			/*0xCE*/	{"ADC A,d8", 8, [this](){ this->ADC_A_r(this->getNextByte()); }},
-			/*0xCF*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xCF*/	{"RST 08H", 16, [this](){ this->RST(0x08); }},
 
-			/*0xD0*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xD1*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xD2*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xD3*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xD4*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xD5*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xD0*/	{"RET NC", 20, [this](){ this->RET_cc(!this->getCFlag()); }},
+			/*0xD1*/	{"POP DE", 12, [this](){ this->POP_rr(this->DE.word()); }},
+			/*0xD2*/	{"JP NC,a16", 16, [this](){ this->JP_cc_nn(!this->getCFlag()); }},
+			/*0xD3*/	{"NULL", 0, [this](){ }},
+			/*0xD4*/	{"CALL NC,a16", 24, [this](){ this->CALL_cc_nn(!this->getCFlag()); }},
+			/*0xD5*/	{"PUSH DE", 16, [this](){ this->PUSH_rr(this->DE); }},
 			/*0xD6*/	{"SUB A,d8", 8, [this](){ this->SUB_A_r(this->getNextByte()); }},
-			/*0xD7*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xD8*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xD9*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xDA*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xDB*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xDC*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xDD*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xD7*/	{"RST 10H", 16, [this](){ this->RST(0x10); }},
+			/*0xD8*/	{"RET C", 20, [this](){ this->RET_cc(this->getCFlag()); }},
+			/*0xD9*/	{"RETI", 16, [this](){ this->RETI(); }},
+			/*0xDA*/	{"JP C,a16", 16, [this](){ this->JP_cc_nn(this->getCFlag()); }},
+			/*0xDB*/	{"NULL", 0, [this](){ }},
+			/*0xD4*/	{"CALL C,a16", 24, [this](){ this->CALL_cc_nn(this->getCFlag()); }},
+			/*0xDD*/	{"NULL", 0, [this](){ }},
 			/*0xDE*/	{"SBC A,d8", 8, [this](){ this->SBC_A_r(this->getNextByte());}},
-			/*0xDF*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xDF*/	{"RST 18H", 16, [this](){ this->RST(0x18); }},
 
-			/*0xE0*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xE1*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xE2*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xE3*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xE4*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xE5*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xE0*/	{"LDH (a8),A", 12, [this](){ this->LD_r_r(this->memoryMap.byte(this->getNextByte()+0xFF00), this->AF.first()); }},
+			/*0xE1*/	{"POP HL", 12, [this](){ this->POP_rr(this->HL.word()); }},
+			/*0xE2*/	{"LD (C),A", 8, [this](){ this->LD_r_r(this->memoryMap.byte(this->BC.second()+0xFF00), this->AF.first()); }},
+			/*0xE3*/	{"NULL", 0, [this](){ }},
+			/*0xE4*/	{"NULL", 0, [this](){ }},
+			/*0xE5*/	{"PUSH HL", 16, [this](){ this->PUSH_rr(this->HL); }},
 			/*0xE6*/	{"AND A,d8", 8, [this](){ this->AND_A_r(this->getNextByte()); }},
-			/*0xE7*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xE8*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xE9*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xEA*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xEB*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xEC*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xED*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xE7*/	{"RST 20H", 16, [this](){ this->RST(0x20); }},
+			/*0xE8*/	{"ADD SP,r8", 16, [this](){ this->ADD_SP_s(); }},
+			/*0xE9*/	{"JP HL", 4, [this](){ this->JP_rr(this->HL.word()); }},
+			/*0xEA*/	{"LD (a16),A", 16, [this](){ this->LD_r_r(this->memoryMap.byte(this->getNextWord()), this->AF.first()); }},
+			/*0xEB*/	{"NULL", 0, [this](){ }},
+			/*0xEC*/	{"NULL", 0, [this](){ }},
+			/*0xED*/	{"NULL", 0, [this](){ }},
 			/*0xEE*/	{"XOR A,d8", 8, [this](){ this->XOR_A_r(this->getNextByte()); }},
-			/*0xEF*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xEF*/	{"RST 28H", 16, [this](){ this->RST(0x28); }},
 
-			/*0xF0*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xF1*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xF2*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xF3*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xF4*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xF5*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xF0*/	{"LDH A,(a8)", 12, [this](){ this->LD_r_r(this->AF.first(), this->memoryMap.byte(this->getNextByte()+0xFF00)); }},
+			/*0xF1*/	{"POP AF", 12, [this](){ this->POP_rr(this->AF.word());}},
+			/*0xF2*/	{"LD A,(C)", 8, [this](){ this->LD_r_r(this->AF.first(), this->memoryMap.byte(this->BC.second()+0xFF00)); }},
+			/*0xF3*/	{"DI", 4, [this](){ this->DI(); }},
+			/*0xF4*/	{"NULL", 0, [this](){ }},
+			/*0xF5*/	{"PUSH AF", 16, [this](){ this->PUSH_rr(this->AF); }},
 			/*0xF6*/	{"OR A,d8", 8, [this](){ this->OR_A_r(this->getNextByte()); }},
-			/*0xF7*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xF8*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xF9*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xFA*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xFB*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xFC*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xFD*/	{"???", 0, [this](){ this->ping(); }},
-			/*0xF6*/	{"CP A,d8", 8, [this](){ this->CP_A_r(this->getNextByte()); }},
-			/*0xFF*/	{"???", 0, [this](){ this->ping(); }},
+			/*0xF7*/	{"RST 30H", 16, [this](){ this->RST(0x30); }},
+			/*0xF8*/	{"LD HL,SP+r8", 12, [this](){ this->LD_rr_rr(this->HL.word(), ADD_SP_s_result()); }},
+			/*0xF9*/	{"LD SP,HL", 8, [this](){ this->LD_rr_rr(this->SP.word(), this->HL.word()); }},
+			/*0xFA*/	{"LD A,(a16)", 16, [this](){ this->LD_r_r(this->AF.first(), this->memoryMap.byte(this->getNextWord())); }},
+			/*0xFB*/	{"EI", 4, [this](){ this->EI(); }},
+			/*0xFC*/	{"NULL", 0, [this](){ }},
+			/*0xFD*/	{"NULL", 0, [this](){ }},
+			/*0xFE*/	{"CP A,d8", 8, [this](){ this->CP_A_r(this->getNextByte()); }},
+			/*0xFF*/	{"RST 38H", 16, [this](){ this->RST(0x38); }},
 		};
 
 		const Operation cbInstructionSet[0x100] = {
-			/*0x00*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x01*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x02*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x03*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x04*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x05*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x06*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x07*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x08*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x09*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x0A*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x0B*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x0C*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x0D*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x0E*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x0F*/	{"???", 0, [this](){ this->ping(); }},
-			
-			/*0x10*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x11*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x12*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x13*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x14*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x15*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x16*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x17*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x18*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x19*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x1A*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x1B*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x1C*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x1D*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x1E*/	{"???", 0, [this](){ this->ping(); }},
-			/*0x1F*/	{"???", 0, [this](){ this->ping(); }},
+			/*0x00*/	{"RLC B", 8, [this](){ this->RLC(this->BC.first()); }},
+			/*0x01*/	{"RLC C", 8, [this](){ this->RLC(this->BC.second()); }},
+			/*0x02*/	{"RLC D", 8, [this](){ this->RLC(this->DE.first()); }},
+			/*0x03*/	{"RLC E", 8, [this](){ this->RLC(this->DE.second()); }},
+			/*0x04*/	{"RLC H", 8, [this](){ this->RLC(this->HL.first()); }},
+			/*0x05*/	{"RLC L", 8, [this](){ this->RLC(this->HL.second()); }},
+			/*0x06*/	{"RLC (HL)", 16, [this](){ this->RLC(this->memoryMap.byte(this->HL.word())); }},
+			/*0x07*/	{"RRC A", 8, [this](){ this->RRC(this->AF.first()); }},
+			/*0x08*/	{"RRC B", 8, [this](){ this->RRC(this->BC.first()); }},
+			/*0x09*/	{"RRC C", 8, [this](){ this->RRC(this->BC.second()); }},
+			/*0x0A*/	{"RRC D", 8, [this](){ this->RRC(this->DE.first()); }},
+			/*0x0B*/	{"RRC E", 8, [this](){ this->RRC(this->DE.second()); }},
+			/*0x0C*/	{"RRC H", 8, [this](){ this->RRC(this->HL.first()); }},
+			/*0x0D*/	{"RRC L", 8, [this](){ this->RRC(this->HL.second()); }},
+			/*0x0E*/	{"RRC (HL)", 16, [this](){ this->RRC(this->memoryMap.byte(this->HL.word())); }},
+			/*0x0F*/	{"RRC A", 8, [this](){ this->RRC(this->AF.first()); }},
+		
+			/*0x10*/	{"RL B", 8, [this](){ this->RL(this->BC.first()); }},
+			/*0x11*/	{"RL C", 8, [this](){ this->RL(this->BC.second()); }},
+			/*0x12*/	{"RL D", 8, [this](){ this->RL(this->DE.first()); }},
+			/*0x13*/	{"RL E", 8, [this](){ this->RL(this->DE.second()); }},
+			/*0x14*/	{"RL H", 8, [this](){ this->RL(this->HL.first()); }},
+			/*0x15*/	{"RL L", 8, [this](){ this->RL(this->HL.second()); }},
+			/*0x16*/	{"RL (HL)", 16, [this](){ this->RLC(this->memoryMap.byte(this->HL.word())); }},
+			/*0x17*/	{"RR A", 8, [this](){ this->RR(this->AF.first()); }},
+			/*0x18*/	{"RR B", 8, [this](){ this->RR(this->BC.first()); }},
+			/*0x19*/	{"RR C", 8, [this](){ this->RR(this->BC.second()); }},
+			/*0x1A*/	{"RR D", 8, [this](){ this->RR(this->DE.first()); }},
+			/*0x1B*/	{"RR E", 8, [this](){ this->RR(this->DE.second()); }},
+			/*0x1C*/	{"RR H", 8, [this](){ this->RR(this->HL.first()); }},
+			/*0x1D*/	{"RR L", 8, [this](){ this->RR(this->HL.second()); }},
+			/*0x1E*/	{"RR (HL)", 16, [this](){ this->RRC(this->memoryMap.byte(this->HL.word())); }},
+			/*0x1F*/	{"RR A", 8, [this](){ this->RR(this->AF.first()); }},
 
 			/*0x20*/	{"???", 0, [this](){ this->ping(); }},
 			/*0x21*/	{"???", 0, [this](){ this->ping(); }},
