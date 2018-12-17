@@ -35,7 +35,7 @@ class CPU{
 		//Flag Register Operations
 
 		void setFlagBit(bool b, Byte mask){
-			Byte & flagReg = this->AF.second();Bit
+			Byte & flagReg = this->AF.second();
 			if (b){
 				flagReg |= mask;
 			}
