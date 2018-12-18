@@ -1,0 +1,1 @@
+const Word BOOT_ROM_DISABLE = 0xFF50;
