@@ -1,4 +1,47 @@
 #include "cpu.h"
+/***
+FLAG REGISTER OPERATIONS
+***/
+
+	void CPU::setFlagBit(bool b, Byte mask){
+		Byte & flagReg = AF.second();
+		if (b){
+			flagReg |= mask;
+		}
+		else {
+			flagReg &= ~mask;
+		}
+	}
+	
+	void CPU::setZFlag(bool z){
+		setFlagBit(z, 0x80);
+	}
+	bool CPU::getZFlag(){
+		return AF.second() & 0x80;
+	}
+	
+	void CPU::setNFlag(bool z){
+		setFlagBit(z, 0x40);
+	}
+	bool CPU::getNFlag(){
+		return AF.second() & 0x40;
+	}
+	
+	void CPU::setHFlag(bool z){			
+		setFlagBit(z, 0x20);
+	}
+	bool CPU::getHFlag(){
+		return AF.second() & 0x20;
+	}
+
+	void CPU::setCFlag(bool z){
+		setFlagBit(z, 0x10);
+	}
+
+	bool CPU::getCFlag(){
+		return AF.second() & 0x10;
+	}
+
 
 /***
 8BIT LOADS
@@ -18,7 +61,7 @@
 	USED BY: 	0x4(0-5), 	0x4(8-d), 	0x5(0-5),	0x5(8-d),	0x6(0-5),	0x6(8-d),	0x7(8-f), 
 				B			C			D			E			H			L			A
 	*/
-	Ticks CPU::LD_r_r(Byte& destination, Byte& source, bool fetchAddress = false){
+	Ticks CPU::LD_r_r(Byte& destination, Byte& source, bool fetchAddress/* = false*/){
 		destination = source;
 		return fetchAddress? 8 : 4;
 	}
