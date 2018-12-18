@@ -3,6 +3,7 @@
 #include "forwarddecls.h"
 #include <array>
 #include <fstream>
+#include <iostream>
 
 class MemoryMap{
 	
@@ -16,6 +17,13 @@ class MemoryMap{
 			}
 			else {
 				spdlog::get("stderr")->error("Couldnt open boot rom");
+			}
+
+			for (int i = 0; i < 16; i++){
+				for (int j = 0; j < 16; j++){
+					std::cout << std::hex << (int)memory[i*16 + j] << " ";
+				}
+				std::cout << std::endl;
 			}
 
 		};

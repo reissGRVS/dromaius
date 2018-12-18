@@ -4,6 +4,5 @@
 
 struct Operation{
 	const std::string mnemonic;
-	const Ticks ticks;
-	const std::function<void()> action;
+	const std::function<Ticks(CPU*)> action;
 };

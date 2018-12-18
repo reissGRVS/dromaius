@@ -48,13 +48,8 @@ Ticks CPU::process(){
 		spdlog::get("console")->info("OpcodeCB {:x} {}", opcode, op->mnemonic);
 	}
 
-	if (op->ticks == 0){
-		spdlog::get("stderr")->error("Not implemented: {0} - opCode {1:x}", op->mnemonic, opcode);
-		exit(0);
-	}
 	spdlog::get("console")->info("At loc {:x} Opcode {:x} {}", PC.word(), opcode, op->mnemonic);
-	op->action();
-	return op->ticks;
+	return op->action(this);
 }
 
 //TODO
