@@ -27,4 +27,5 @@ add_executable(
 	${CPP_SRC}/registers.cpp
 	${CPP_SRC}/opcodes.cpp
 	${CPP_SRC}/cbopcodes.cpp
+	${CPP_SRC}/genericops.cpp
 )

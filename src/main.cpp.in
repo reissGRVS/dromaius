@@ -16,12 +16,12 @@ int main(int argc, char* argv[]){
 	console->info("{}.{}", Dromaius_VERSION_MAJOR, Dromaius_VERSION_MINOR);
 	
 	//Get path to ROM
-	std::string rom_path = "defaultROM";
+	std::string cartridgeName = "roms/tetris.gb";
 	if (argc == 2){
-		rom_path = argv[1];
-		console->info("ROM Path set to: {}", rom_path);
+		cartridgeName = argv[1];
+		console->info("Cartridge set to: {}", cartridgeName);
 	}
 
 	//Create our Gameboy
-	Gameboy gb(rom_path);
+	Gameboy gb(cartridgeName);
 }

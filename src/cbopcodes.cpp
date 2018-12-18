@@ -1,5 +1,5 @@
 #include "cpu.h"
-#define HL_RESOLVE 8
+const Ticks HL_RESOLVE = 8;
 
 const Operation CPU::cbInstructionSet[0x100] = {
 			/*0x00*/	{"RLC B", [](CPU* cpu){ return cpu->RLC(cpu->BC.first()); }},

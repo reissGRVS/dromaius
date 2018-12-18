@@ -84,8 +84,10 @@ FLAG REGISTER OPERATIONS
 
 	Ticks CPU::POP_rr(Word& reg){
 		Word& stackPointer = SP.word();
+		//spdlog::get("console")->info("POP from SP @ loc {:x}", stackPointer);
 		Byte low = memoryMap.getByte(stackPointer++);
 		Byte high = memoryMap.getByte(stackPointer++);
+		//spdlog::get("console")->info("High {:x} Low {:x}", high, low);
 		reg = composeWord(high, low);
 		return 12;
 	}
@@ -93,9 +95,15 @@ FLAG REGISTER OPERATIONS
 	Ticks CPU::PUSH_rr(RegisterPair& reg){
 		Word& stackPointer = SP.word();
 		stackPointer--;
+		//spdlog::get("console")->info("PUSH to SP @ loc {:x} storing {:x}", stackPointer, reg.first());
 		memoryMap.setByte(stackPointer, reg.first());
+		
 		stackPointer--;
+		//spdlog::get("console")->info("PUSH to SP @ loc {:x} storing {:x}", stackPointer, reg.second());
 		memoryMap.setByte(stackPointer, reg.second());
+
+		//spdlog::get("console")->info("PUSH to SP @ loc {:x} storing {:x}", stackPointer, reg.word());
+		//spdlog::get("console")->info("High {:x} Low {:x}",  reg.first(), reg.second());
 		return 16;
 	}
 /***
@@ -320,7 +328,7 @@ MISC
 	/*DAA - This may not work at all
 	*/
 	Ticks CPU::DAA(){
-		spdlog::get("console")->error("DAA has been called");
+		//spdlog::get("console")->error("DAA has been called");
 		Byte & A = AF.first();
 		if ((A & 0x0f) > 9 || getHFlag()) {
 			A += 0x06;
@@ -342,14 +350,19 @@ JUMPS
 	/* RST f
 	*/
 	Ticks CPU::RST(Byte f){
+		//spdlog::get("console")->info("RST");
 		PUSH_rr(PC);
 		PC.word() = f;
 		return 16;
 	}
 
 	Ticks CPU::CALL_nn(){
+		Word location = getNextWord();
 		PUSH_rr(PC);
-		PC.word() = getNextWord();
+		//spdlog::get("console")->info("Call from {:x}", PC.word());
+		PC.word() = location;
+		//spdlog::get("console")->info("Call to {:x}", PC.word());
+		//memoryMap.printRegion(SP.word()-4);
 		return 24;
 	}
 
@@ -359,6 +372,8 @@ JUMPS
 			return CALL_nn();
 		}
 		else{
+			//Skip this calls inputs
+			getNextWord();
 			return 12;
 		}
 	}
@@ -367,7 +382,7 @@ JUMPS
 	Ticks CPU::JP_rr(Word newLoc){
 		Word & oldLoc = PC.word();
 		if (newLoc == oldLoc){
-			spdlog::get("stderr")->error("Infinite JP instruction");
+			//spdlog::get("stderr")->error("Infinite JP instruction");
 			exit(0);
 		}
 		oldLoc = newLoc;
@@ -380,7 +395,7 @@ JUMPS
 		Word newLoc = getNextWord();
 		Word & oldLoc = PC.word();
 		if (newLoc == oldLoc){
-			spdlog::get("stderr")->error("Infinite JP instruction");
+			//spdlog::get("stderr")->error("Infinite JP instruction");
 			exit(0);
 		}
 		oldLoc = newLoc;
@@ -394,6 +409,8 @@ JUMPS
 			return JP_nn();
 		}
 		else{
+			//Skip this calls inputs
+			getNextWord();
 			return 12;
 		}
 	}
@@ -402,7 +419,7 @@ JUMPS
 		SignedByte jumpSize = (SignedByte)getNextByte();
 
 		if(jumpSize==-2){ 
-			spdlog::get("stderr")->error("Infinite JR instruction");
+			//spdlog::get("stderr")->error("Infinite JR instruction");
 			exit(0); 
 		}
 
@@ -412,11 +429,12 @@ JUMPS
 	}
 
 	Ticks CPU::JR_cc_n(bool condition) {
-		//TODO: This only takes 8  if condition is false
 		if(condition){
 			return JR_n();
 		}
 		else{
+			//Skip this calls inputs
+			getNextByte();
 			return 8;
 		}
 	}
@@ -526,7 +544,9 @@ RETURNS
 ***/
 
 	Ticks CPU::RET(){
+		//spdlog::get("console")->info("RET");
 		POP_rr(PC.word());
+		//spdlog::get("console")->info("PC now is {:x} high {:x} low {:x}", PC.word(), PC.first(), PC.second());
 		return 16;
 	}
 

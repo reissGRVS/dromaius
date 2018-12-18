@@ -5,10 +5,9 @@
 
 class Gameboy{
 	public:
-		Gameboy(std::string rom_name);
+		Gameboy(std::string cartridgeName);
 	
 	private:
 		MemoryMap memoryMap;
 		CPU cpu;
-		//Cartridge
 };

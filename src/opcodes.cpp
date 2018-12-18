@@ -1,5 +1,5 @@
 #include "cpu.h"
-#define ADDRESS_FETCH 4;
+const Ticks ADDRESS_FETCH = 4;
 const Operation CPU::instructionSet[0x100] = {
 			/*0x00*/	{"NOP", [](CPU*){ return 4;}},
 			/*0x01*/	{"LD BC,nn", [](CPU* cpu){ return cpu->LD_r_nn(cpu->BC.word()); }},
@@ -287,6 +287,6 @@ const Operation CPU::instructionSet[0x100] = {
 			/*0xFB*/	{"EI", [](CPU* cpu){ return cpu->EI(); }},
 			/*0xFC*/	{"NULL", [](CPU*){ return 0; }},
 			/*0xFD*/	{"NULL", [](CPU*){ return 0; }},
-			/*0xFE*/	{"CP A,d8", [](CPU* cpu){ return ADDRESS_FETCH + cpu->CP_A_r(cpu->getNextByte()); }},
+			/*0xFE*/	{"CP A,d8", [](CPU* cpu){return ADDRESS_FETCH + cpu->CP_A_r(cpu->getNextByte()); }},
 			/*0xFF*/	{"RST 38H", [](CPU* cpu){ return cpu->RST(0x38); }},
 		};
