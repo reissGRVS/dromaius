@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include <cstdlib>
 
 CPU::CPU(MemoryMap& gameboyMemory) :
 	memoryMap(gameboyMemory)
@@ -8,6 +9,15 @@ CPU::CPU(MemoryMap& gameboyMemory) :
 	// AF.setSecond(0x02);
 	// spdlog::get("console")->info("AF {}", AF.getWord());
 
+}
+
+void CPU::dump(){
+	spdlog::get("console")->info("AF {}", AF.word());
+	spdlog::get("console")->info("BC {}", BC.word());
+	spdlog::get("console")->info("DE {}", DE.word());
+	spdlog::get("console")->info("HL {}", HL.word());
+	spdlog::get("console")->info("PC {}", PC.word());
+	spdlog::get("console")->info("SP {}", SP.word());
 }
 
 void CPU::ping(){
@@ -36,7 +46,7 @@ Ticks CPU::process(){
 	if (interruptsEnabled()){
 		handleInterruptRequest();
 	}
-
+	Word location = PC.word();
 	Byte opcode = getNextByte();
 	const Operation * op = &instructionSet[opcode];
 	//If CB Prefix instruction
@@ -45,11 +55,10 @@ Ticks CPU::process(){
 		opcode = getNextByte();
 		//get extended op
 		op = &cbInstructionSet[opcode];
-		spdlog::get("console")->info("OpcodeCB {:x} {}", opcode, op->mnemonic);
 	}
 
-	spdlog::get("console")->info("At loc {:x} Opcode {:x} {}", PC.word(), opcode, op->mnemonic);
-	return op->action(this);
+	spdlog::get("console")->info("At loc {:x} Opcode {:x} {}", location, opcode, op->mnemonic);
+	return op->action(this);;
 }
 
 //TODO

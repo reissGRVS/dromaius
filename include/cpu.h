@@ -27,9 +27,10 @@ class CPU{
 		MemoryMap& memoryMap;
 		
 		Byte & getNextByte();
+
 		Word getNextWord();
 		Word composeWord(Byte high, Byte low);
-
+		void dump();
 		bool interruptsEnabled() const;
 		void handleInterruptRequest();
 		
