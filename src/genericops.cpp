@@ -284,11 +284,11 @@ MISC
 ***/
 
 	Ticks CPU::EI(){
-		IE = true;
+		memoryMap.byte(IE) = 1;
 		return 4;
 	}
 	Ticks CPU::DI(){
-		IE = false;
+		memoryMap.byte(IE) = 0;
 		return 4;
 	}
 	/* CPL - invert A
@@ -538,7 +538,6 @@ RETURNS
 	}
 
 	Ticks CPU::RET_cc(bool condition){
-		//TODO: only 8 if not condition
 		if (condition){
 			POP_rr(PC.word());
 			return 20;

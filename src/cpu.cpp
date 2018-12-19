@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include <cstdlib>
+#include "memorylocs.h"
 
 CPU::CPU(MemoryMap& gameboyMemory) :
 	memoryMap(gameboyMemory)
@@ -24,7 +25,6 @@ Byte CPU::getNextByte(){
 	return memoryMap.byte(pc++);
 }
 
-//TODO: Make it clear the that getNextByte and getNextWord are not similar
 Word CPU::getNextWord(){
 
 	Byte low = this->getNextByte();
@@ -56,9 +56,8 @@ Ticks CPU::process(){
 	return op->action(this);;
 }
 
-//TODO
 bool CPU::interruptsEnabled() const{
-	return IE;
+	return memoryMap.byte(IE).val();
 }
 
 //TODO

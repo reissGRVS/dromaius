@@ -54,11 +54,9 @@ class MemoryMap{
 		}
 		//Once disabled it cannot be re-enabled
 		bool bootRomEnabled(){
-			_bootRomEnabled = _bootRomEnabled && cartridge[BOOT_ROM_DISABLE] != 1;
+			_bootRomEnabled = _bootRomEnabled && cartridge[BRD] != 1;
 			if(_bootRomEnabled == false){
-
 				spdlog::get("console")->info("BootRom Disabled");
-				printRegion(BOOT_ROM_DISABLE-5);
 				exit(0);
 			}
 			return _bootRomEnabled;

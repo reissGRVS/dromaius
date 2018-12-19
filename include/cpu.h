@@ -21,8 +21,6 @@ class CPU{
 		RegisterPair PC;
 
 		bool halt = false;
-		//Interrupts enabled
-		bool IE = false;
 		
 		MemoryMap& memoryMap;
 		

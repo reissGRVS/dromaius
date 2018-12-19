@@ -2,5 +2,5 @@
 #include "byte.h"
 
 class CPU;
-typedef unsigned char Ticks;
+typedef unsigned int Ticks;
 typedef char SignedByte;

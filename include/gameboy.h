@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "cpu.h"
+#include "gpu.h"
 #include "memorymap.h"
 
 class Gameboy{
@@ -10,4 +11,5 @@ class Gameboy{
 	private:
 		MemoryMap memoryMap;
 		CPU cpu;
+		GPU gpu;
 };

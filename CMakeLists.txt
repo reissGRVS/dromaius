@@ -23,8 +23,8 @@ add_executable(
 	Dromaius 
 	${CPP_SRC}/main.cpp
 	${CPP_SRC}/cpu.cpp
+	${CPP_SRC}/gpu.cpp
 	${CPP_SRC}/gameboy.cpp
-	${CPP_SRC}/registers.cpp
 	${CPP_SRC}/opcodes.cpp
 	${CPP_SRC}/cbopcodes.cpp
 	${CPP_SRC}/genericops.cpp
