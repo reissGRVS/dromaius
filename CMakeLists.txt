@@ -15,7 +15,7 @@ configure_file(
 )
 
 
-add_definitions(-std=c++14 -Wall -Wextra -pedantic -g)
+add_definitions(-std=c++14 -Wall -Wextra -fmax-errors=10 -pedantic -g)
 
 include_directories("${CPP_INC}")
 

@@ -3,20 +3,18 @@
 
 class RegisterPair{
 	public:
-		RegisterPair(){
-		}
- 
-		Word & word();
-		Byte & first(); 
-		Byte & second();
-
+		RegisterPair() :
+		firstReg(&_first), secondReg(&_second), wordReg(&_first, &_second)
+		{}
+		Word & word(){return wordReg;}
+		Byte & first(){return firstReg;}
+		Byte & second(){return secondReg;}
+		
 	private:
-
-		//This may be broken by different endianness 
-		union {
-			Word wordReg;
-			Byte byteReg[2];
-		} reg;
-
-
+		unsigned char _first = 0;
+		unsigned char _second = 0;
+		Byte firstReg;
+		Byte secondReg;
+		Word wordReg;
+		
 };

@@ -26,7 +26,7 @@ class CPU{
 		
 		MemoryMap& memoryMap;
 		
-		Byte & getNextByte();
+		Byte getNextByte();
 
 		Word getNextWord();
 		Word composeWord(Byte high, Byte low);
@@ -40,7 +40,7 @@ class CPU{
 		
 		//FLAG REGISTER OPERATIONS
 
-			void setFlagBit(bool b, Byte mask);
+			void setFlagBit(bool b, unsigned char mask);
 			void setZFlag(bool z);
 			bool getZFlag();
 			void setNFlag(bool z);
@@ -55,33 +55,33 @@ class CPU{
 			/***
 			8BIT LOADS
 			***/
-				Ticks LD_r_n(Byte& reg);
-				Ticks LD_r_r(Byte& destination, Byte& source, bool fetchAddress = false);
+				Ticks LD_r_n(Byte reg);
+				Ticks LD_r_r(Byte destination, Byte source, bool fetchAddress = false);
 			/***
 			16BIT LOADS
 			***/
 				Ticks LD_r_nn(Word& reg);
-				void LD_rr_rr(Word& destination, Word source);
+				void LD_rr_rr(Word& destination, unsigned int source);
 				Ticks POP_rr(Word& reg);
 				Ticks PUSH_rr(RegisterPair& reg);
 			/***
 			8BIT ALU
 			***/
-				Ticks ADD_A_r(Byte& add);
-				Ticks ADC_A_r(Byte& add);
-				Ticks SUB_A_r(Byte& sub);
-				Ticks SBC_A_r(Byte& sub);
-				Ticks AND_A_r(Byte& byte);
-				Ticks OR_A_r(Byte& byte);
-				Ticks XOR_A_r(Byte& byte);
-				Ticks CP_A_r(Byte& sub);
-				Ticks INC_r(Byte& byte);
-				Ticks DEC_r(Byte& byte);
+				Ticks ADD_A_r(Byte add);
+				Ticks ADC_A_r(Byte add);
+				Ticks SUB_A_r(Byte sub);
+				Ticks SBC_A_r(Byte sub);
+				Ticks AND_A_r(Byte byte);
+				Ticks OR_A_r(Byte byte);
+				Ticks XOR_A_r(Byte byte);
+				Ticks CP_A_r(Byte sub);
+				Ticks INC_r(Byte byte);
+				Ticks DEC_r(Byte byte);
 			/***
 			16BIT ALU
 			***/
 				Ticks ADD_HL_rr(Word& word);
-				Word ADD_SP_s_result();
+				unsigned int ADD_SP_s_result();
 				Ticks ADD_SP_s();
 				Ticks INC_rr(Word& word);
 				Ticks DEC_rr(Word& word);
@@ -97,7 +97,7 @@ class CPU{
 			/***
 			JUMPS
 			***/
-				Ticks RST(Byte f);
+				Ticks RST(unsigned char f);
 				Ticks CALL_nn();
 				Ticks CALL_cc_nn(bool condition);
 				Ticks JP_rr(Word newLoc);
@@ -108,15 +108,15 @@ class CPU{
 			/***
 			ROTATES & SHIFTS
 			***/
-				Byte getBit(Byte byte, Byte bit);
-				Ticks RLC(Byte& byte);
-				Ticks RL(Byte& byte);
-				Ticks RRC(Byte& byte);
-				Ticks RR(Byte& byte);
-				Ticks SLA(Byte& byte);
-				Ticks SRA(Byte& byte);
-				Ticks SRL(Byte& byte);
-				Ticks SWAP(Byte& byte);
+				unsigned char getBit(Byte byte, unsigned char bit);
+				Ticks RLC(Byte byte);
+				Ticks RL(Byte byte);
+				Ticks RRC(Byte byte);
+				Ticks RR(Byte byte);
+				Ticks SLA(Byte byte);
+				Ticks SRA(Byte byte);
+				Ticks SRL(Byte byte);
+				Ticks SWAP(Byte byte);
 			/***
 			RETURNS
 			***/
@@ -126,9 +126,9 @@ class CPU{
 			/***
 			BIT
 			***/
-				Ticks BIT_b_r(Byte bit, Byte reg);
-				Ticks SET_b_r(Byte bit, Byte & reg);
-				Ticks RES_b_r(Byte bit, Byte & reg);
+				Ticks BIT_b_r(unsigned char bit, Byte reg);
+				Ticks SET_b_r(unsigned char bit, Byte reg);
+				Ticks RES_b_r(unsigned char bit, Byte reg);
 			
 		//OPCODES
 			static const Operation instructionSet[0x100];

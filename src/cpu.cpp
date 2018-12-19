@@ -4,11 +4,6 @@
 CPU::CPU(MemoryMap& gameboyMemory) :
 	memoryMap(gameboyMemory)
 {
-	// TODO: Add this as a test
-	// AF.setFirst(0x01);
-	// AF.setSecond(0x02);
-	// spdlog::get("console")->info("AF {}", AF.getWord());
-
 }
 
 void CPU::dump(){
@@ -24,7 +19,7 @@ void CPU::ping(){
 	spdlog::get("console")->info("CPU Ping");
 }
 
-Byte & CPU::getNextByte(){
+Byte CPU::getNextByte(){
 	Word & pc = PC.word();
 	return memoryMap.byte(pc++);
 }
@@ -38,7 +33,7 @@ Word CPU::getNextWord(){
 }
 
 Word CPU::composeWord(Byte high, Byte low){
-	return ((high << 8) + low);
+	return Word(high, low);
 }
 
 Ticks CPU::process(){
@@ -46,8 +41,8 @@ Ticks CPU::process(){
 	if (interruptsEnabled()){
 		handleInterruptRequest();
 	}
-	Word location = PC.word();
-	Byte opcode = getNextByte();
+	unsigned int location = PC.word().val();
+	unsigned char opcode = getNextByte();
 	const Operation * op = &instructionSet[opcode];
 	//If CB Prefix instruction
 	if (opcode == 0xCB) {

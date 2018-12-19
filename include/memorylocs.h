@@ -1,1 +1,1 @@
-const Word BOOT_ROM_DISABLE = 0xFF50;
+const unsigned int BOOT_ROM_DISABLE = 0xFF50;

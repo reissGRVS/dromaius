@@ -3,7 +3,7 @@
 FLAG REGISTER OPERATIONS
 ***/
 
-	void CPU::setFlagBit(bool b, Byte mask){
+	void CPU::setFlagBit(bool b, unsigned char mask){
 		Byte & flagReg = AF.second();
 		if (b){
 			flagReg |= mask;
@@ -51,7 +51,7 @@ FLAG REGISTER OPERATIONS
 	LD R,n register <- immediate 8bit data
 	USED BY: 0x06, 0x0e, 0x16, 0x1e, 0x26, 0x2e
 	*/
-	Ticks CPU::LD_r_n(Byte& reg){
+	Ticks CPU::LD_r_n(Byte reg){
 		reg = getNextByte();
 		return 8;
 	}
@@ -61,7 +61,7 @@ FLAG REGISTER OPERATIONS
 	USED BY: 	0x4(0-5), 	0x4(8-d), 	0x5(0-5),	0x5(8-d),	0x6(0-5),	0x6(8-d),	0x7(8-f), 
 				B			C			D			E			H			L			A
 	*/
-	Ticks CPU::LD_r_r(Byte& destination, Byte& source, bool fetchAddress/* = false*/){
+	Ticks CPU::LD_r_r(Byte destination, Byte source, bool fetchAddress/* = false*/){
 		destination = source;
 		return fetchAddress? 8 : 4;
 	}
@@ -78,16 +78,14 @@ FLAG REGISTER OPERATIONS
 	}
 
 	//Only two opcodes use cpu and they both have different ticks
-	void CPU::LD_rr_rr(Word& destination, Word source){
+	void CPU::LD_rr_rr(Word& destination, unsigned int source){
 		destination = source;
 	}
 
 	Ticks CPU::POP_rr(Word& reg){
 		Word& stackPointer = SP.word();
-		//spdlog::get("console")->info("POP from SP @ loc {:x}", stackPointer);
-		Byte low = memoryMap.getByte(stackPointer++);
-		Byte high = memoryMap.getByte(stackPointer++);
-		//spdlog::get("console")->info("High {:x} Low {:x}", high, low);
+		Byte low = memoryMap.byte(stackPointer++);
+		Byte high = memoryMap.byte(stackPointer++);
 		reg = composeWord(high, low);
 		return 12;
 	}
@@ -95,15 +93,9 @@ FLAG REGISTER OPERATIONS
 	Ticks CPU::PUSH_rr(RegisterPair& reg){
 		Word& stackPointer = SP.word();
 		stackPointer--;
-		//spdlog::get("console")->info("PUSH to SP @ loc {:x} storing {:x}", stackPointer, reg.first());
-		memoryMap.setByte(stackPointer, reg.first());
-		
+		memoryMap.byte(stackPointer) = reg.first();
 		stackPointer--;
-		//spdlog::get("console")->info("PUSH to SP @ loc {:x} storing {:x}", stackPointer, reg.second());
-		memoryMap.setByte(stackPointer, reg.second());
-
-		//spdlog::get("console")->info("PUSH to SP @ loc {:x} storing {:x}", stackPointer, reg.word());
-		//spdlog::get("console")->info("High {:x} Low {:x}",  reg.first(), reg.second());
+		memoryMap.byte(stackPointer) = reg.second();
 		return 16;
 	}
 /***
@@ -112,7 +104,7 @@ FLAG REGISTER OPERATIONS
 
 	/* ADD A,s	A <- A+s
 	*/
-	Ticks CPU::ADD_A_r(Byte& add){
+	Ticks CPU::ADD_A_r(Byte add){
 		Byte& A = AF.first();
 		
 		setNFlag(false);
@@ -125,9 +117,9 @@ FLAG REGISTER OPERATIONS
 
 	/* ADC A,s  A <- A+s+CY
 	*/
-	Ticks CPU::ADC_A_r(Byte& add){
+	Ticks CPU::ADC_A_r(Byte add){
 		Byte& A = AF.first();
-		Byte carry = getCFlag() ? 1 : 0;
+		unsigned char carry = getCFlag() ? 1 : 0;
 		setNFlag(false);
 		setCFlag((A+add+carry) > 0xFF);
 		setHFlag((A&0x0F) + (add&0x0F) + carry > 0x0f);
@@ -138,7 +130,7 @@ FLAG REGISTER OPERATIONS
 
 	/* SUB A,s	A <- A-s
 	*/
-	Ticks CPU::SUB_A_r(Byte& sub){
+	Ticks CPU::SUB_A_r(Byte sub){
 		Byte& A = AF.first();
 		
 		setNFlag(true);
@@ -151,12 +143,12 @@ FLAG REGISTER OPERATIONS
 
 	/* SBC A,s  A <- A-s-CY
 	*/
-	Ticks CPU::SBC_A_r(Byte& sub){
+	Ticks CPU::SBC_A_r(Byte sub){
 		Byte& A = AF.first();
-		Byte carry = getCFlag() ? 1 : 0;
+		unsigned char carry = getCFlag() ? 1 : 0;
 
 		setNFlag(true);
-		setCFlag(A < sub + carry);
+		setCFlag(A < (sub + carry));
 		setHFlag((A&0x0F) < ((sub+carry)&0x0F));
 		A = (A-sub-carry);
 		setZFlag(A == 0);
@@ -165,7 +157,7 @@ FLAG REGISTER OPERATIONS
 
 	/* AND s
 	*/
-	Ticks CPU::AND_A_r(Byte& byte){
+	Ticks CPU::AND_A_r(Byte byte){
 		setNFlag(false);
 		setCFlag(false);
 		setHFlag(true);
@@ -178,7 +170,7 @@ FLAG REGISTER OPERATIONS
 
 	/* OR s
 	*/
-	Ticks CPU::OR_A_r(Byte& byte){
+	Ticks CPU::OR_A_r(Byte byte){
 		setNFlag(false);
 		setCFlag(false);
 		setHFlag(false);
@@ -191,7 +183,7 @@ FLAG REGISTER OPERATIONS
 
 	/* XOR s
 	*/
-	Ticks CPU::XOR_A_r(Byte& byte){
+	Ticks CPU::XOR_A_r(Byte byte){
 		setNFlag(false);
 		setCFlag(false);
 		setHFlag(false);
@@ -204,7 +196,7 @@ FLAG REGISTER OPERATIONS
 
 	/* CP s - same as SUB but without update of A
 	*/
-	Ticks CPU::CP_A_r(Byte& sub){
+	Ticks CPU::CP_A_r(Byte sub){
 		Byte& A = AF.first();
 		setNFlag(true);
 		setCFlag(A < sub);
@@ -215,7 +207,7 @@ FLAG REGISTER OPERATIONS
 	
 	/* INC s
 	*/
-	Ticks CPU::INC_r(Byte& byte){
+	Ticks CPU::INC_r(Byte byte){
 		setNFlag(false);
 		byte++;
 		setHFlag((byte & 0x0F) == 0);
@@ -225,7 +217,7 @@ FLAG REGISTER OPERATIONS
 	
 	/*  DEC s
 	*/
-	Ticks CPU::DEC_r(Byte& byte){
+	Ticks CPU::DEC_r(Byte byte){
 		setNFlag(true);
 		byte--;
 		setHFlag((byte & 0x0F) == 0);
@@ -248,10 +240,10 @@ FLAG REGISTER OPERATIONS
 		return 8;
 	}
 
-	Word CPU::ADD_SP_s_result(){
-		SignedByte& byte = (SignedByte&)getNextByte();
+	unsigned int CPU::ADD_SP_s_result(){
+		char byte = (char)getNextByte().val();
 		Word & stackPointer = SP.word();
-		Word result = static_cast<Word>(stackPointer + byte);
+		unsigned int result = stackPointer.val() + byte;
 
 		setZFlag(false);
 		setNFlag(false);
@@ -349,8 +341,7 @@ JUMPS
 
 	/* RST f
 	*/
-	Ticks CPU::RST(Byte f){
-		//spdlog::get("console")->info("RST");
+	Ticks CPU::RST(unsigned char f){
 		PUSH_rr(PC);
 		PC.word() = f;
 		return 16;
@@ -359,10 +350,8 @@ JUMPS
 	Ticks CPU::CALL_nn(){
 		Word location = getNextWord();
 		PUSH_rr(PC);
-		//spdlog::get("console")->info("Call from {:x}", PC.word());
 		PC.word() = location;
-		//spdlog::get("console")->info("Call to {:x}", PC.word());
-		//memoryMap.printRegion(SP.word()-4);
+
 		return 24;
 	}
 
@@ -382,7 +371,7 @@ JUMPS
 	Ticks CPU::JP_rr(Word newLoc){
 		Word & oldLoc = PC.word();
 		if (newLoc == oldLoc){
-			//spdlog::get("stderr")->error("Infinite JP instruction");
+			spdlog::get("stderr")->error("Infinite JP instruction");
 			exit(0);
 		}
 		oldLoc = newLoc;
@@ -395,7 +384,7 @@ JUMPS
 		Word newLoc = getNextWord();
 		Word & oldLoc = PC.word();
 		if (newLoc == oldLoc){
-			//spdlog::get("stderr")->error("Infinite JP instruction");
+			spdlog::get("stderr")->error("Infinite JP instruction");
 			exit(0);
 		}
 		oldLoc = newLoc;
@@ -419,7 +408,7 @@ JUMPS
 		SignedByte jumpSize = (SignedByte)getNextByte();
 
 		if(jumpSize==-2){ 
-			//spdlog::get("stderr")->error("Infinite JR instruction");
+			spdlog::get("stderr")->error("Infinite JR instruction");
 			exit(0); 
 		}
 
@@ -443,14 +432,14 @@ JUMPS
 ROTATES & SHIFTS
 ***/
 
-	Byte CPU::getBit(Byte byte, Byte bit){
-		return (byte >> bit) & 1;
+	unsigned char CPU::getBit(Byte byte, unsigned char bit){
+		return (byte.val() >> bit) & 1;
 	}
 
 	/* RLC
 	*/
-	Ticks CPU::RLC(Byte& byte){
-		Byte carrybit =  getBit(byte, 7);
+	Ticks CPU::RLC(Byte byte){
+		unsigned char carrybit =  getBit(byte, 7);
 		byte = (byte << 1) + carrybit;
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -461,9 +450,9 @@ ROTATES & SHIFTS
 
 	/* RL
 	*/
-	Ticks CPU::RL(Byte& byte){
-		Byte carrybit =  getBit(byte, 7);
-		Byte firstbit = getCFlag() ? 1 : 0;
+	Ticks CPU::RL(Byte byte){
+		unsigned char carrybit =  getBit(byte, 7);
+		unsigned char firstbit = getCFlag() ? 1 : 0;
 		byte = (byte << 1) + firstbit;
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -474,8 +463,8 @@ ROTATES & SHIFTS
 
 	/* RRC
 	*/
-	Ticks CPU::RRC(Byte& byte){
-		Byte carrybit =  getBit(byte, 0);
+	Ticks CPU::RRC(Byte byte){
+		unsigned char carrybit =  getBit(byte, 0);
 		byte = (byte >> 1) + (carrybit << 7);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -485,9 +474,9 @@ ROTATES & SHIFTS
 	}
 	/* RR
 	*/
-	Ticks CPU::RR(Byte& byte){
-		Byte carrybit = getBit(byte, 0);
-		Byte lastbit = getCFlag() ? 1 : 0;
+	Ticks CPU::RR(Byte byte){
+		unsigned char carrybit = getBit(byte, 0);
+		unsigned char lastbit = getCFlag() ? 1 : 0;
 		byte = (byte >> 1) + (lastbit << 7);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -498,8 +487,8 @@ ROTATES & SHIFTS
 
 	//SLA, SRA, SWAP, SRL
 
-	Ticks CPU::SLA(Byte& byte){
-		Byte carrybit =  getBit(byte, 7);
+	Ticks CPU::SLA(Byte byte){
+		unsigned char carrybit =  getBit(byte, 7);
 		byte = (byte << 1);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -508,9 +497,9 @@ ROTATES & SHIFTS
 		return 8;
 	}
 	
-	Ticks CPU::SRA(Byte& byte){
-		Byte lastbit =  getBit(byte, 7);
-		Byte carrybit =  getBit(byte, 0);
+	Ticks CPU::SRA(Byte byte){
+		unsigned char lastbit =  getBit(byte, 7);
+		unsigned char carrybit =  getBit(byte, 0);
 		byte = (byte >> 1)+ (lastbit << 7);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -519,8 +508,8 @@ ROTATES & SHIFTS
 		return 8;
 	}
 
-	Ticks CPU::SRL(Byte& byte){
-		Byte carrybit =  getBit(byte, 0);
+	Ticks CPU::SRL(Byte byte){
+		unsigned char carrybit =  getBit(byte, 0);
 		byte = (byte >> 1);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -529,8 +518,8 @@ ROTATES & SHIFTS
 		return 8;
 	}
 
-	Ticks CPU::SWAP(Byte& byte){
-		Byte smallNibble = byte & 0x0F;
+	Ticks CPU::SWAP(Byte byte){
+		unsigned char smallNibble = byte.val() & 0x0F;
 		byte = (byte >> 4) + (smallNibble << 4);
 
 		setZFlag(byte == 0);
@@ -544,9 +533,7 @@ RETURNS
 ***/
 
 	Ticks CPU::RET(){
-		//spdlog::get("console")->info("RET");
 		POP_rr(PC.word());
-		//spdlog::get("console")->info("PC now is {:x} high {:x} low {:x}", PC.word(), PC.first(), PC.second());
 		return 16;
 	}
 
@@ -570,7 +557,7 @@ RETURNS
 /***
 BIT
 ***/
-	Ticks CPU::BIT_b_r(Byte bit, Byte reg){
+	Ticks CPU::BIT_b_r(unsigned char bit, Byte reg){
 		setZFlag(!getBit(reg, bit));
 		setNFlag(false);
 		setHFlag(true);
@@ -578,12 +565,12 @@ BIT
 	}
 
 	//RES, SET
-	Ticks CPU::SET_b_r(Byte bit, Byte & reg){
+	Ticks CPU::SET_b_r(unsigned char bit, Byte reg){
 		reg |= 1 << bit;
 		return 8;
 	}
 
-	Ticks CPU::RES_b_r(Byte bit, Byte & reg){
+	Ticks CPU::RES_b_r(unsigned char bit, Byte reg){
 		reg &= ~(1 << bit);
 		return 8;
 	}
