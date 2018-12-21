@@ -20,6 +20,8 @@ class CPU{
 		RegisterPair SP;
 		RegisterPair PC;
 
+
+		bool IME = false;
 		bool halt = false;
 		
 		MemoryMap& memoryMap;
@@ -29,8 +31,11 @@ class CPU{
 		Word getNextWord();
 		Word composeWord(Byte high, Byte low);
 		void dump();
+
+		//INTERRUPTS
 		bool interruptsEnabled() const;
-		void handleInterruptRequest();
+		bool handleInterruptRequests();
+		void handleInterrupt(unsigned char toHandle);
 		
 		void setHalt(bool h){
 			halt = h;

@@ -63,9 +63,6 @@ class MemoryMap{
 		}
 
 		Byte byte(unsigned int address) {
-			if(address == 0x29 || address == 0x2A){
-				spdlog::get("console")->info("fetch");
-			}
 			if (bootRomEnabled() && address < bootRomSize){
 				return Byte(&bootRom[address], true);
 			}

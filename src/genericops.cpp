@@ -284,11 +284,11 @@ MISC
 ***/
 
 	Ticks CPU::EI(){
-		memoryMap.byte(IE) = 1;
+		IME = true;
 		return 4;
 	}
 	Ticks CPU::DI(){
-		memoryMap.byte(IE) = 0;
+		IME = false;
 		return 4;
 	}
 	/* CPL - invert A
