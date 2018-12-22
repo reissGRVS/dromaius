@@ -1,6 +1,8 @@
 #include "spdlog/spdlog.h"
-#include "byte.h"
 
 class CPU;
+class Byte;
+class Word;
+
 typedef unsigned int Ticks;
 typedef char SignedByte;

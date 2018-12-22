@@ -3,6 +3,8 @@
 #include "forwarddecls.h"
 #include "memorymap.h"
 #include "operation.h"
+#include "bytes/byte.h"
+#include "bytes/word.h"
 
 class CPU{
 	public:

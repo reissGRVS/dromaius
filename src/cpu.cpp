@@ -5,8 +5,7 @@
 
 CPU::CPU(MemoryMap& gameboyMemory) :
 	memoryMap(gameboyMemory)
-{
-}
+{}
 
 void CPU::dump(){
 	spdlog::get("console")->info("AF {}", AF.word());
@@ -28,8 +27,8 @@ Byte CPU::getNextByte(){
 
 Word CPU::getNextWord(){
 
-	Byte low = this->getNextByte();
-	Byte high = this->getNextByte();
+	Byte low = getNextByte();
+	Byte high = getNextByte();
 	return composeWord(high, low);
 }
 

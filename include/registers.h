@@ -1,5 +1,7 @@
 #pragma once
 #include "forwarddecls.h"
+#include "bytes/byte.h"
+#include "bytes/word.h"
 
 class RegisterPair{
 	public:

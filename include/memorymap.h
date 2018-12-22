@@ -1,10 +1,13 @@
 #pragma once
 
 #include "forwarddecls.h"
+#include "bytes/byte.h"
+#include "bytes/word.h"
 #include "memorylocs.h"
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 class MemoryMap{
 	
@@ -64,7 +67,7 @@ class MemoryMap{
 
 		Byte byte(unsigned int address) {
 			if (bootRomEnabled() && address < bootRomSize){
-				return Byte(&bootRom[address], true);
+				return Byte(&bootRom[address], ByteType::NO_WRITE);
 			}
 			else{
 				return Byte(&cartridge[address]);
