@@ -49,19 +49,40 @@ class MemoryMap{
 				std::cout << std::endl;
 			}
 		}
+
 		void printRegion(unsigned int address){
-			for (unsigned int i = 0; i < 16; i++){
-				unsigned int loc = address + i;
-				spdlog::get("console")->info("{:x} @ loc {:x}", bootRom[loc], loc);
+			for (unsigned int i = 0; i < 8; i++){
+				unsigned int loc = address + 2*i;
+				spdlog::get("console")->info("{:x} {:x} @ loc {:x}", cartridge[loc], cartridge[loc+1], loc);
 			}
 		}
+
+		void printTile(unsigned int address){
+			for (unsigned int i = 0; i < 8; i++){
+				unsigned int loc = address + 2*i;
+				coutByte(cartridge[loc]); coutByte(cartridge[loc+1]);
+				std::cout << '\n';
+			}
+			std::cout << '\n';
+		}
+
+		void coutByte(unsigned char b){
+			for (int i = 0; i < 8; i++) {
+				unsigned int bit = b & (0x80 >> i) ? 1 : 0;
+				std::cout << bit;
+			}
+		}
+
 		//Once disabled it cannot be re-enabled
 		bool bootRomEnabled(){
 			_bootRomEnabled = _bootRomEnabled && cartridge[BRD] != 1;
-			if(_bootRomEnabled == false){
-				spdlog::get("console")->info("BootRom Disabled");
-				exit(0);
-			}
+			// if(_bootRomEnabled == false){
+			// 	//spdlog::get("console")->info("BootRom Disabled");
+			// 	// printTile(0x8000);
+			// 	// printTile(0x8010);
+			// 	// printTile(0x8020);
+			// 	// printTile(0x8030);
+			// }
 			return _bootRomEnabled;
 		}
 

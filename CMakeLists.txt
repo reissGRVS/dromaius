@@ -14,11 +14,9 @@ configure_file(
 	"${CPP_SRC}/main.cpp"
 )
 
-
 add_definitions(-std=c++14 -Wall -Wextra -fmax-errors=10 -pedantic -g)
 
 include_directories("${CPP_INC}")
-
 add_executable(
 	Dromaius 
 	${CPP_SRC}/main.cpp
@@ -29,3 +27,10 @@ add_executable(
 	${CPP_SRC}/opcodes/cbopcodes.cpp
 	${CPP_SRC}/opcodes/genericops.cpp
 )
+
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
+find_package(SFML 2 REQUIRED graphics window system audio)
+include_directories(${SFML_INCLUDE_DIR})
+target_link_libraries(Dromaius ${SFML_LIBRARIES} ${SFML_DEPENDENCIES})
+
+install(TARGETS Dromaius DESTINATION bin)
