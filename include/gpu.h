@@ -24,12 +24,16 @@ class GPU{
 		GPU(MemoryMap& memoryMap);
 		void process();
 		void initialiseTileMapData();
+		void frameBuffer();
+		void renderBackground();
+		std::array<sf::Sprite, 32 * 32> backgroundTiles;
 	private:
-		
+		sf::Uint8 * getTile(unsigned char tileID);
 		MemoryMap& memoryMap;
 		//Image of height 8 width NO_TILES*8 (3072 atm)
+		
 		std::array<sf::Uint8, NO_TILES * Tile::HEIGHT * Tile::WIDTH * 4> tileMapData;
-		sf::Image tileMap;
+		sf::Texture tileMap;
 };
 
 

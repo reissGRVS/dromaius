@@ -62,6 +62,35 @@ void GPU::initialiseTileMapData(){
 
 		}
 	}
-	tileMap.create(NO_TILES*8, 8, tileMapData.data());
-	tileMap.saveToFile("tilemap.png");
+	tileMap.create(NO_TILES*8, 8);
+	tileMap.update(tileMapData.data());
+	tileMap.copyToImage().saveToFile("tilemap.png");
+}
+
+sf::Uint8 * GPU::getTile(unsigned char tileID){
+	return tileMapData.data() + (tileID*4*Tile::WIDTH);
+}
+
+const unsigned int BACKGROUND_TILE_MAP = 0x9800;
+void GPU::renderBackground(){
+	//get background map
+	unsigned int address = BACKGROUND_TILE_MAP;
+	for (int y = 0; y < 32; y++ ) { //32x32tilemap
+		for (int x = 0; x < 32; x++ ){
+			auto tileID = memoryMap.byte(address++).val();
+			backgroundTiles[x+y*32].setTexture(tileMap);
+			backgroundTiles[x+y*32].setTextureRect(sf::IntRect(tileID*8,0, 8, 8));
+			backgroundTiles[x+y*32].setPosition(sf::Vector2f(x*8.f, y*8.f));
+
+		}
+	}
+	
+}
+
+void GPU::frameBuffer(){
+	//Add background
+	renderBackground();
+	//Add window
+
+	//Add sprites
 }

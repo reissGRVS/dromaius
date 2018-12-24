@@ -6,7 +6,7 @@ Gameboy::Gameboy(std::string cartridgeName) :
 	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap)
 {
 
-	sf::RenderWindow window(sf::VideoMode(200, 200), "SFML works!");
+	
 	spdlog::get("console")->info("Powering up Gameboy");
 	Ticks sinceLY = 0;
     while (1)
@@ -19,18 +19,21 @@ Gameboy::Gameboy(std::string cartridgeName) :
 		}
 
 		if(memoryMap.bootRomEnabled() == false){
+
+			
 			gpu.initialiseTileMapData();
+			gpu.renderBackground();
+			sf::RenderTexture texture;
+			texture.create(32*8,32*8);
+			texture.clear();
+			for (auto tile : gpu.backgroundTiles){
+				texture.draw(tile);
+				texture.display();
+				texture.getTexture().copyToImage().saveToFile("background.png");
+			}
 			exit(0);
 		}
-        // sf::Event event;
-        // while (window.pollEvent(event))
-        // {
-        //     if (event.type == sf::Event::Closed)
-        //         window.close();
-        // }
 
-        // window.clear();
-        // window.display();
     }  
 	
 }
