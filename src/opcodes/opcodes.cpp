@@ -274,7 +274,7 @@ const Operation CPU::instructionSet[0x100] = {
 			/*0xEF*/	{"RST 28H", [](CPU* cpu){ return cpu->RST(0x28); }},
 
 			/*0xF0*/	{"LDH A,(a8)", [](CPU* cpu){ return cpu->LD_r_r(cpu->AF.first(), cpu->memoryMap.byte(cpu->getNextByte()+0xFF00)); }},
-			/*0xF1*/	{"POP AF", [](CPU* cpu){ return cpu->POP_rr(cpu->AF.word());}},
+			/*0xF1*/	{"POP AF", [](CPU* cpu){ Ticks ticks = cpu->POP_rr(cpu->AF.word()); cpu->AF.second() &= 0xF0;return ticks;}},
 			/*0xF2*/	{"LD A,(C)", [](CPU* cpu){ return cpu->LD_r_r(cpu->AF.first(), cpu->memoryMap.byte(cpu->BC.second()+0xFF00)); }},
 			/*0xF3*/	{"DI", [](CPU* cpu){ return cpu->DI(); }},
 			/*0xF4*/	{"NULL", [](CPU*){ return 0; }},

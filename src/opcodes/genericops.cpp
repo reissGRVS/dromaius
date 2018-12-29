@@ -311,21 +311,32 @@ MISC
 		return 4;
 	}
 
-	/*DAA - This may not work at all
+	/*DAA - https://ehaskins.com/2018-01-30%20Z80%20DAA/
 	*/
 	Ticks CPU::DAA(){
-		//spdlog::get("console")->error("DAA has been called");
-		Byte & A = AF.first();
-		if ((A & 0x0f) > 9 || getHFlag()) {
-			A += 0x06;
+		auto A = AF.first();
+
+		unsigned char correction = 0x00;
+		//if the last addition caused the first nibble to be greater than 9 then correct by 6
+		//the half carry flag covers the cases where it is greater than 15
+		if ((!getNFlag() && ((A & 0x0F) > 9)) || getHFlag()) {
+			correction += 0x06;
 		}
-		if ((A & 0xf0) > 0x90 || getCFlag()) {
-			A += 0x60;
+
+		//Same as above but with full carry
+		if ((!getNFlag() && (A > 0x99)) || getCFlag()) {
+			correction += 0x60;
 			setCFlag(true);
 		}
 
-		setZFlag(A == 0);
+		if (getNFlag()) {
+			A -= correction;
+		} else {
+			A += correction;
+		}
+
 		setHFlag(false);
+		setZFlag(A == 0);
 		return 4;
 	}
 
