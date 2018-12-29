@@ -87,6 +87,10 @@ class MemoryMap{
 		}
 
 		Byte byte(unsigned int address) {
+			if (address == SC){
+				std::cout << byte(SB).val();
+			}
+
 			if (bootRomEnabled() && address < bootRomSize){
 				return Byte(&bootRom[address], ByteType::NO_WRITE);
 			}

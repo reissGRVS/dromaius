@@ -143,7 +143,7 @@ FLAG REGISTER OPERATIONS
 
 		setNFlag(true);
 		setCFlag(A < (sub + carry));
-		setHFlag((A&0x0F) < ((sub+carry)&0x0F));
+		setHFlag((A&0x0F) - (sub&0x0F) - carry < 0);
 		A = (A-sub-carry);
 		setZFlag(A == 0);
 		return 4;
@@ -214,7 +214,7 @@ FLAG REGISTER OPERATIONS
 	Ticks CPU::DEC_r(Byte byte){
 		setNFlag(true);
 		byte--;
-		setHFlag((byte & 0x0F) == 0);
+		setHFlag((byte & 0x0F) == 0x0F);
 		setZFlag(byte == 0);
 		return 4;
 	}
@@ -403,11 +403,11 @@ JUMPS
 
 		if(jumpSize==-2){ 
 			spdlog::get("stderr")->error("Infinite JR instruction");
-			exit(0); 
+			exit(0);
 		}
 
 		PC.word() += jumpSize;
-
+		
 		return 12;
 	}
 
