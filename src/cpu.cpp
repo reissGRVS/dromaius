@@ -45,7 +45,7 @@ Ticks CPU::process(){
 		}
 	}
 
-	//unsigned int location = PC.word().val();
+	unsigned int location = PC.word().val();
 	unsigned char opcode = getNextByte();
 	const Operation * op = &instructionSet[opcode];
 	//If CB Prefix instruction
@@ -56,7 +56,7 @@ Ticks CPU::process(){
 		op = &cbInstructionSet[opcode];
 	}
 
-	//spdlog::get("console")->info("At loc {:x} Opcode {:x} {}", location, opcode, op->mnemonic);
+	spdlog::get("console")->info("At loc {:x} Opcode {:x} {}", location, opcode, op->mnemonic);
 	return op->action(this);;
 }
 
@@ -66,7 +66,7 @@ bool CPU::interruptsEnabled() const{
 
 void CPU::handleInterrupt(unsigned char toHandle){
 	//Reset IF flag for handled interrupt and disable interrupts
-	memoryMap.byte(IF) &= ~(1 << toHandle);
+	memoryMap.byte(IF).setBit(toHandle, false);
 	IME = false;
 
 	//Jump to starting address of interrupt

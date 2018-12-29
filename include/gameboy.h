@@ -3,6 +3,7 @@
 #include "cpu.h"
 #include "gpu.h"
 #include "memorymap.h"
+#include "timer.h"
 
 class Gameboy{
 	public:
@@ -12,4 +13,5 @@ class Gameboy{
 		MemoryMap memoryMap;
 		CPU cpu;
 		GPU gpu;
+		Timer timer;
 };

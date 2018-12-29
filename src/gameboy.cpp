@@ -4,7 +4,7 @@
 #include <chrono>
 
 Gameboy::Gameboy(std::string cartridgeName) :
-	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap)
+	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap), timer(memoryMap)
 {
 
 	sf::RenderWindow window(sf::VideoMode(256,256), "Dromaius");
@@ -18,7 +18,7 @@ Gameboy::Gameboy(std::string cartridgeName) :
 		auto ticks = cpu.process();
 		tickTotal += ticks;
 		gpu.process(ticks);
-
+		timer.process(ticks);
 		
 		if (tickTotal > (456*154)){
 			tickTotal = 0;
