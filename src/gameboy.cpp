@@ -1,39 +1,40 @@
 #include "gameboy.h"
 #include "spdlog/spdlog.h"
 #include <SFML/Graphics.hpp>
+#include <chrono>
 
 Gameboy::Gameboy(std::string cartridgeName) :
 	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap)
 {
 
-	
+	sf::RenderWindow window(sf::VideoMode(256,256), "Dromaius");
+	sf::View view;
+	view.setSize(sf::Vector2f(160, 144));
+
 	spdlog::get("console")->info("Powering up Gameboy");
-	Ticks sinceLY = 0;
+	Ticks tickTotal = 0;
     while (1)
     {
-		sinceLY += cpu.process();
-		//TODO: Remove this
-		if (sinceLY > 450){
-			sinceLY = 0;
-			gpu.process();
-		}
+		auto ticks = cpu.process();
+		tickTotal += ticks;
+		gpu.process(ticks);
 
-		if(memoryMap.bootRomEnabled() == false){
-
-			
+		
+		if (tickTotal > (456*154)){
+			tickTotal = 0;
 			gpu.initialiseTileMapData();
 			gpu.renderBackground();
-			sf::RenderTexture texture;
-			texture.create(32*8,32*8);
-			texture.clear();
+			auto scx = memoryMap.byte(SCX).val();
+			auto scy = memoryMap.byte(SCY).val();
+			view.setCenter(scx+80,scy+72);
+			window.clear();
+			window.setView(view);
 			for (auto tile : gpu.backgroundTiles){
-				texture.draw(tile);
-				texture.display();
-				texture.getTexture().copyToImage().saveToFile("background.png");
+				window.draw(tile);
 			}
-			exit(0);
-		}
+			window.display();
 
+		}
     }  
 	
 }
