@@ -3,43 +3,37 @@
 FLAG REGISTER OPERATIONS
 ***/
 
-	void CPU::setFlagBit(bool b, unsigned char mask){
-		Byte & flagReg = AF.second();
-		if (b){
-			flagReg |= mask;
-		}
-		else {
-			flagReg &= ~mask;
-		}
+	void CPU::setFlagBit(bool bitVal, unsigned char pos){
+		AF.second().setBit(pos, bitVal);;
 	}
 	
 	void CPU::setZFlag(bool z){
-		setFlagBit(z, 0x80);
+		setFlagBit(z, 7);
 	}
 	bool CPU::getZFlag(){
-		return AF.second() & 0x80;
+		return AF.second().getBit(7);
 	}
 	
 	void CPU::setNFlag(bool z){
-		setFlagBit(z, 0x40);
+		setFlagBit(z, 6);
 	}
 	bool CPU::getNFlag(){
-		return AF.second() & 0x40;
+		return AF.second().getBit(6);
 	}
 	
 	void CPU::setHFlag(bool z){			
-		setFlagBit(z, 0x20);
+		setFlagBit(z, 5);
 	}
 	bool CPU::getHFlag(){
-		return AF.second() & 0x20;
+		return AF.second().getBit(5);
 	}
 
 	void CPU::setCFlag(bool z){
-		setFlagBit(z, 0x10);
+		setFlagBit(z, 4);
 	}
 
 	bool CPU::getCFlag(){
-		return AF.second() & 0x10;
+		return AF.second().getBit(4);
 	}
 
 

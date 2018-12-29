@@ -100,6 +100,21 @@ class Byte{
 			return returnVal;
 		}
 
+
+		unsigned char getBit(unsigned char pos){
+			return (val() >> pos) & 1;
+		}
+
+		void setBit(unsigned char pos, bool bitVal){
+			unsigned char mask = 1 << pos;
+			if (bitVal){
+				set( val() | mask);
+			}
+			else {
+				set( val() & ~mask);
+			}
+		}
+
 	protected:
 		unsigned char * value;
 		const ByteType byteType;
