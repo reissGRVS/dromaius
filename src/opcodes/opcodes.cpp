@@ -8,7 +8,7 @@ const Operation CPU::instructionSet[0x100] = {
 			/*0x04*/	{"INC B", [](CPU* cpu){ return cpu->INC_r(cpu->BC.first()); }},
 			/*0x05*/	{"DEC B", [](CPU* cpu){ return cpu->DEC_r(cpu->BC.first()); }},
 			/*0x06*/	{"LD B,n", [](CPU* cpu){ return cpu->LD_r_n(cpu->BC.first()); }},
-			/*0x07*/	{"RLCA", [](CPU* cpu){ return cpu->RLC(cpu->AF.first()); cpu->setZFlag(false); }},
+			/*0x07*/	{"RLCA", [](CPU* cpu){ Ticks ticks = cpu->RLC(cpu->AF.first()); cpu->setZFlag(false); return ticks;}},
 
 			/*0x08*/	{"LD (a16),SP", [](CPU* cpu){
 							//Store low
@@ -21,7 +21,7 @@ const Operation CPU::instructionSet[0x100] = {
 			/*0x0C*/	{"INC C", [](CPU* cpu){ return cpu->INC_r(cpu->BC.second()); }},
 			/*0x0D*/	{"DEC C", [](CPU* cpu){ return cpu->DEC_r(cpu->BC.second()); }},
 			/*0x0E*/	{"LD C, n", [](CPU* cpu){ return cpu->LD_r_n(cpu->BC.second()); }},
-			/*0x0F*/	{"RRCA", [](CPU* cpu){ return cpu->RRC(cpu->AF.first()); cpu->setZFlag(false); }},
+			/*0x0F*/	{"RRCA", [](CPU* cpu){ Ticks ticks = cpu->RRC(cpu->AF.first()); cpu->setZFlag(false); return ticks;}},
 			
 			/*0x10*/	{"STOP 0", [](CPU*){ return 4; /*TODO: Stop processor & screen until button press*/ }},
 			/*0x11*/	{"LD DE,nn", [](CPU* cpu){ return cpu->LD_r_nn(cpu->DE.word()); }},
@@ -30,7 +30,7 @@ const Operation CPU::instructionSet[0x100] = {
 			/*0x14*/	{"INC D", [](CPU* cpu){ return cpu->INC_r(cpu->DE.first()); }},
 			/*0x15*/	{"DEC D", [](CPU* cpu){ return cpu->DEC_r(cpu->DE.first()); }},
 			/*0x16*/	{"LD D, n", [](CPU* cpu){ return cpu->LD_r_n(cpu->DE.first()); }},
-			/*0x17*/	{"RLA", [](CPU* cpu){ return cpu->RL(cpu->AF.first()); cpu->setZFlag(false); }},
+			/*0x17*/	{"RLA", [](CPU* cpu){ Ticks ticks = cpu->RL(cpu->AF.first()); cpu->setZFlag(false); return ticks;}},
 
 			/*0x18*/	{"JR n", [](CPU* cpu){ return cpu->JR_n(); }},
 			/*0x19*/	{"ADD HL,DE", [](CPU* cpu){ return cpu->ADD_HL_rr(cpu->DE.word()); }},
@@ -39,7 +39,7 @@ const Operation CPU::instructionSet[0x100] = {
 			/*0x1C*/	{"INC E", [](CPU* cpu){ return cpu->INC_r(cpu->DE.second()); }},
 			/*0x1D*/	{"DEC E", [](CPU* cpu){ return cpu->DEC_r(cpu->DE.second()); }},
 			/*0x1E*/	{"LD E, n", [](CPU* cpu){ return cpu->LD_r_n(cpu->DE.second()); }},
-			/*0x1F*/	{"RRA", [](CPU* cpu){ return cpu->RR(cpu->AF.first()); cpu->setZFlag(false); }},
+			/*0x1F*/	{"RRA", [](CPU* cpu){ Ticks ticks = cpu->RR(cpu->AF.first()); cpu->setZFlag(false); return ticks;}},
 
 			/*0x20*/	{"JR NZ,n", [](CPU* cpu){ return cpu->JR_cc_n(!cpu->getZFlag()); }},
 			/*0x21*/	{"LD HL,nn", [](CPU* cpu){ return cpu->LD_r_nn(cpu->HL.word()); }},
