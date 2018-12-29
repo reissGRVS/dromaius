@@ -39,10 +39,13 @@ Word CPU::composeWord(Byte high, Byte low){
 Ticks CPU::process(){
 
 	//If interrupt is enabled and one is serviced return 20 Ticks
-	if (interruptsEnabled()){
-		if (handleInterruptRequests()){
-			return 20;
-		}
+	
+	if (handleInterruptRequests()){
+		return 20;
+	}
+
+	if(halt){
+		return 4;
 	}
 
 	unsigned int location = PC.word().val();
@@ -60,9 +63,6 @@ Ticks CPU::process(){
 	return op->action(this);;
 }
 
-bool CPU::interruptsEnabled() const{
-	return IME;
-}
 
 void CPU::handleInterrupt(unsigned char toHandle){
 	//Reset IF flag for handled interrupt and disable interrupts
@@ -93,13 +93,18 @@ void CPU::handleInterrupt(unsigned char toHandle){
 }
 
 bool CPU::handleInterruptRequests() {
-
+	
 	//Check set IF flags
 	Byte interruptsRequested = memoryMap.byte(IF);
 	Byte interruptsEnabled = memoryMap.byte(IE);
 	unsigned char interrupts = interruptsEnabled & interruptsRequested;
 
 	if(interrupts == 0){
+		return false;
+	}
+	
+	if (!IME){
+		halt = false;
 		return false;
 	}
 	

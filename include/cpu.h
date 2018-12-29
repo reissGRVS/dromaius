@@ -35,7 +35,6 @@ class CPU{
 		void dump();
 
 		//INTERRUPTS
-		bool interruptsEnabled() const;
 		bool handleInterruptRequests();
 		void handleInterrupt(unsigned char toHandle);
 		
