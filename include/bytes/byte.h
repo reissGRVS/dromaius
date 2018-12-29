@@ -94,6 +94,14 @@ class Byte{
 			set(val()-v);
 		}
 
+		void operator-=(const Byte& rhs){
+			subtract(rhs.val());
+		}
+
+		void operator-=(const unsigned char rhs){
+			subtract(rhs);
+		}
+
 		unsigned char operator--( int ){
 			unsigned int returnVal = val();
 			subtract(1);

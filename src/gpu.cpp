@@ -1,6 +1,5 @@
 #include "gpu.h"
 #include "memorylocs.h"
-#include "binOps.h"
 
 GPU::GPU(MemoryMap& gameboyMemory) :
 	memoryMap(gameboyMemory)
