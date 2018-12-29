@@ -22,6 +22,7 @@ add_executable(
 	${CPP_SRC}/main.cpp
 	${CPP_SRC}/cpu.cpp
 	${CPP_SRC}/gpu.cpp
+	${CPP_SRC}/timer.cpp
 	${CPP_SRC}/gameboy.cpp
 	${CPP_SRC}/opcodes/opcodes.cpp
 	${CPP_SRC}/opcodes/cbopcodes.cpp
