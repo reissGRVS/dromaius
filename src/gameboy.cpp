@@ -22,6 +22,8 @@ Gameboy::Gameboy(std::string cartridgeName) :
 		gpu.process(ticks);
 		timer.process(ticks);
 		
+		//TODO: Change the location of this, maybe make a callback function for gpu to call
+		//This is each frame (~60Hz) 
 		if (tickTotal > (456*154)){
 			tickTotal = 0;
 			gpu.initialiseTileMapData();

@@ -128,25 +128,25 @@ void GPU::initialiseTileMapData(){
 				//Add to the tileMapData
 				auto firstPos = tileStart + (row*(NO_TILES*Tile::WIDTH) + column)*4;
 				switch(colourCode){
-					case 0:
+					case 3:
 						/*R*/tileMapData[firstPos] = 0;
 						/*G*/tileMapData[firstPos+1] = 0;
 						/*B*/tileMapData[firstPos+2] = 0;
 						/*A*/tileMapData[firstPos+3] = 255;
 						break;
-					case 1:
-						/*R*/tileMapData[firstPos] = 255;
-						/*G*/tileMapData[firstPos+1] = 255;
-						/*B*/tileMapData[firstPos+2] = 255;
-						/*A*/tileMapData[firstPos+3] = 255;
-						break;
 					case 2:
-						/*R*/tileMapData[firstPos] = 255;
-						/*G*/tileMapData[firstPos+1] = 255;
-						/*B*/tileMapData[firstPos+2] = 255;
+						/*R*/tileMapData[firstPos] = 80;
+						/*G*/tileMapData[firstPos+1] = 80;
+						/*B*/tileMapData[firstPos+2] = 80;
 						/*A*/tileMapData[firstPos+3] = 255;
 						break;
-					case 3:
+					case 1:
+						/*R*/tileMapData[firstPos] = 180;
+						/*G*/tileMapData[firstPos+1] = 180;
+						/*B*/tileMapData[firstPos+2] = 180;
+						/*A*/tileMapData[firstPos+3] = 255;
+						break;
+					case 0:
 						/*R*/tileMapData[firstPos] = 250;
 						/*G*/tileMapData[firstPos+1] = 255;
 						/*B*/tileMapData[firstPos+2] = 255;
@@ -159,7 +159,7 @@ void GPU::initialiseTileMapData(){
 	}
 	tileMap.create(NO_TILES*8, 8);
 	tileMap.update(tileMapData.data());
-	tileMap.copyToImage().saveToFile("tilemap.png");
+	//tileMap.copyToImage().saveToFile("tilemap.png");
 }
 
 sf::Uint8 * GPU::getTile(unsigned char tileID){

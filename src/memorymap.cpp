@@ -1,7 +1,7 @@
 #include "memorymap.h"
 #include "memorylocs.h"
 #include "bytes/byte.h"
-
+#include <SFML/Window/Keyboard.hpp>
 #include <fstream>
 #include <iostream>
 
@@ -42,12 +42,47 @@ bool MemoryMap::bootRomEnabled(){
 
 Byte MemoryMap::byte(unsigned int address) {
 
-	//TODO: Get rid
+	//TODO: Get rid, this should not belong here
 	//Override Joypad register, always reports no buttons pressed
 	if (address == P1){
-		auto b = Byte(&cartridge[address]);
-		b = 0x3F;
-		return b;
+		auto p1Byte = Byte(&cartridge[P1]);
+		auto right = sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
+		auto left = sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
+		auto up = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
+		auto down = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
+
+		auto a = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+		auto b = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+		auto select = sf::Keyboard::isKeyPressed(sf::Keyboard::Num2);
+		auto start = sf::Keyboard::isKeyPressed(sf::Keyboard::Num1);
+
+		auto directionSwitch = !p1Byte.getBit(4);
+		auto buttonSwitch = !p1Byte.getBit(5);
+
+
+		auto p10 = (directionSwitch && right) 	|| (buttonSwitch && a);
+		auto p11 = (directionSwitch && left) 	|| (buttonSwitch && b);
+		auto p12 = (directionSwitch && up) 		|| (buttonSwitch && select);
+		auto p13 = (directionSwitch && down) 	|| (buttonSwitch && start);
+		
+		p1Byte.setBit(0,	!p10);
+		p1Byte.setBit(1,	!p11);
+		p1Byte.setBit(2,	!p12);
+		p1Byte.setBit(3,	!p13);
+		
+
+		// 			P14 		P15
+		//  		| 			|
+		//  P10-----O-Right-----O-A
+		//  		| 			|
+		//  P11-----O-Left------O-B
+		//  		| 			|
+		//  P12-----O-Up--------O-Select
+		//  		| 			|
+		//  P13-----O-Down------O-Start
+		//http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
+
+		return p1Byte;
 	}
 
 	if (address == SC) {
