@@ -2,6 +2,8 @@
 #include "spdlog/spdlog.h"
 #include <SFML/Graphics.hpp>
 #include <chrono>
+#include "memorylocs.h"
+
 
 Gameboy::Gameboy(std::string cartridgeName) :
 	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap), timer(memoryMap)

@@ -1,6 +1,8 @@
 #pragma once
 #include "forwarddecls.h"
 #include "memorymap.h"
+#include "bytes/byte.h"
+
 
 class Timer{
 	public:
@@ -13,9 +15,10 @@ class Timer{
 		Ticks t;
 		//DIV ticks
 		Ticks d;
+
 		MemoryMap& memoryMap;
-		Byte tima = memoryMap.byte(TIMA);
-		Byte tma = memoryMap.byte(TMA);
-		Byte tac = memoryMap.byte(TAC);
-		Byte div = memoryMap.byte(DIV);
+		Byte tima;
+		Byte tma;
+		Byte tac;
+		Byte div;
 };

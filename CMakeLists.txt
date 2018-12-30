@@ -20,6 +20,7 @@ include_directories("${CPP_INC}")
 add_executable(
 	Dromaius 
 	${CPP_SRC}/main.cpp
+	${CPP_SRC}/memorymap.cpp
 	${CPP_SRC}/cpu.cpp
 	${CPP_SRC}/gpu.cpp
 	${CPP_SRC}/timer.cpp

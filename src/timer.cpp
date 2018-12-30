@@ -1,9 +1,14 @@
 #include "timer.h"
 #include "speeds.h"
+#include "memorylocs.h"
 
 Timer::Timer(MemoryMap& mem) :
-	memoryMap(mem)
-{}
+	memoryMap(mem),
+	tima(memoryMap.byte(TIMA)),
+	tma(memoryMap.byte(TMA)),
+	tac(memoryMap.byte(TAC)),
+	div(memoryMap.byte(DIV))
+	{}
 
 
 void Timer::process(Ticks ticks){
