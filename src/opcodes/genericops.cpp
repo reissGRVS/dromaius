@@ -376,7 +376,7 @@ JUMPS
 	Ticks CPU::JP_rr(Word newLoc){
 		Word & oldLoc = PC.word();
 		if (newLoc == oldLoc){
-			spdlog::get("stderr")->error("Infinite JP instruction");
+			spdlog::get("stderr")->error("Infinite JP rr instruction");
 			exit(0);
 		}
 		oldLoc = newLoc;
@@ -389,7 +389,7 @@ JUMPS
 		Word newLoc = getNextWord();
 		Word & oldLoc = PC.word();
 		if (newLoc == oldLoc){
-			spdlog::get("stderr")->error("Infinite JP instruction");
+			spdlog::get("stderr")->error("Infinite JP nn instruction");
 			exit(0);
 		}
 		oldLoc = newLoc;
@@ -413,7 +413,7 @@ JUMPS
 		SignedByte jumpSize = (SignedByte)getNextByte();
 
 		if(jumpSize==-2){ 
-			spdlog::get("stderr")->error("Infinite JR instruction");
+			spdlog::get("stderr")->error("Infinite JR n instruction");
 			exit(0);
 		}
 

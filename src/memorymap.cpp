@@ -40,19 +40,32 @@ bool MemoryMap::bootRomEnabled(){
 	return _bootRomEnabled;
 }
 
-Byte MemoryMap::byte(unsigned int address) {
+void MemoryMap::startDMA(){
+	spdlog::get("console")->info("DMA");
+	unsigned int sourceOffset = cartridge[DMA];
+	sourceOffset = sourceOffset<<8; //Source:      XX00-XX9F   ;XX in range from 00-F1h
 
+	for (int i = 0; i < 0xA0; i++){
+		cartridge[SPRITE_OAM+i] = cartridge[sourceOffset+i];
+	}
+	//TODO: proper timing and write protection during this
+
+}
+
+Byte MemoryMap::byte(unsigned int address) {
+	//spdlog::get("console")->debug("LOC {:x}, VAL {:x}", address, cartridge[address]);
 	//TODO: Get rid, this should not belong here
 	//Override Joypad register, always reports no buttons pressed
 	if (address == P1){
 		auto p1Byte = Byte(&cartridge[P1]);
-		auto right = sf::Keyboard::isKeyPressed(sf::Keyboard::Right);
-		auto left = sf::Keyboard::isKeyPressed(sf::Keyboard::Left);
-		auto up = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
-		auto down = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
+		
+		auto right = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+		auto left = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+		auto up = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
+		auto down = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
 
-		auto a = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
-		auto b = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+		auto a = sf::Keyboard::isKeyPressed(sf::Keyboard::K);
+		auto b = sf::Keyboard::isKeyPressed(sf::Keyboard::L);
 		auto select = sf::Keyboard::isKeyPressed(sf::Keyboard::Num2);
 		auto start = sf::Keyboard::isKeyPressed(sf::Keyboard::Num1);
 
@@ -86,10 +99,15 @@ Byte MemoryMap::byte(unsigned int address) {
 	}
 
 	if (address == SC) {
-		std::cout << byte(SB).val();
+		std::cout << cartridge[SB];
 	}
+
+	if (address == DMA){
+		return Byte(&cartridge[address], ByteType::DMA_SIGNAL, this);
+	}
+
 	if (address == DIV){
-		return Byte(&bootRom[address], ByteType::WRITE_RESET);
+		return Byte(&cartridge[address], ByteType::WRITE_RESET);
 	}
 
 	if (bootRomEnabled() && address < bootRomSize){

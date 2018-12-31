@@ -1,5 +1,6 @@
 #pragma once
 #include "forwarddecls.h"
+#include "memorymap.h"
 
 //This would be nicer if I used polymorphism imo, however I dont want to have to manage the lifetime of Bytes at the moment or restructure, 
 //possibly a TODO, could improve performance by minimizing construction of Byte copies, not sure what the move overhead is for unique_ptr though
@@ -7,13 +8,14 @@
 enum ByteType {
 	NORMAL,
 	NO_WRITE,
-	WRITE_RESET
+	WRITE_RESET,
+	DMA_SIGNAL
 };
 
 class Byte{
 	friend class Word;
     public:
-    	Byte(unsigned char * val, ByteType bt = ByteType::NORMAL) : value(val), byteType(bt)  {}
+    	Byte(unsigned char * val,  ByteType bt = ByteType::NORMAL, MemoryMap* mem = nullptr) : value(val), byteType(bt), memoryMap(mem)  {}
     	
     	unsigned char val() const{
     		return *value;
@@ -30,6 +32,10 @@ class Byte{
 					break;
 				case ByteType::WRITE_RESET:
 					*value = 0;
+					break;
+				case ByteType::DMA_SIGNAL:
+					*value = val;
+					memoryMap->startDMA();
 					break;
 			}
 
@@ -126,4 +132,5 @@ class Byte{
 	protected:
 		unsigned char * value;
 		const ByteType byteType;
+		MemoryMap* memoryMap;
 };

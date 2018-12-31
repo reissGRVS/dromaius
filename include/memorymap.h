@@ -9,6 +9,7 @@ class MemoryMap{
 		MemoryMap(std::string cartridgeName);
 		bool bootRomEnabled();
 		Byte byte(unsigned int address);
+		void startDMA();
 	private:
 		std::array<unsigned char, 0x100> bootRom = {};
 		std::array<unsigned char, 0x10000> cartridge = {};
