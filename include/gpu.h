@@ -36,7 +36,9 @@ class GPU{
 		void initialiseTileMapData();
 		void frameBuffer();
 		void renderBackground();
+		void renderSprites();
 		std::array<sf::Sprite, 32 * 32> backgroundTiles;
+		std::array<sf::Sprite, 40> sprites;
 	private:
 		sf::Uint8 * getTile(unsigned char tileID);
 		MemoryMap& memoryMap;

@@ -111,7 +111,6 @@ void GPU::setMode(Mode m){
 	}
 }
 
-const unsigned int VRAM_TILE_START = 0x8000;
 
 void GPU::initialiseTileMapData(){
 	auto address = VRAM_TILE_START; 
@@ -179,6 +178,30 @@ void GPU::renderBackground(){
 		}
 	}
 	
+}
+
+
+const unsigned int MAX_SPRITES = 40;
+
+void GPU::renderSprites(){
+	auto address = SPRITE_OAM;
+	for (unsigned int sprite = 0; sprite < MAX_SPRITES; sprite++){
+		unsigned char y = memoryMap.byte(address++).val()-16;
+		unsigned char x = memoryMap.byte(address++).val()-8;
+		auto tileID = memoryMap.byte(address++).val();
+		//TODO: implement all of these 
+		//auto attributes = memoryMap.byte(address++).val();
+		address++;
+
+		auto scx = memoryMap.byte(SCX).val();
+		auto scy = memoryMap.byte(SCY).val();
+
+		sprites[sprite].setTexture(tileMap);
+		sprites[sprite].setTextureRect(sf::IntRect(tileID*8,0, 8, 8));
+		sprites[sprite].setPosition(sf::Vector2f(scx+x, scy+y));
+
+	}
+
 }
 
 void GPU::frameBuffer(){

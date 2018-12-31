@@ -1,6 +1,13 @@
 #pragma once
 typedef const unsigned int LOC;
 
+LOC SPRITE_OAM = 0xFE00;
+LOC VRAM_TILE_START = 0x8000;
+
+  /////////////
+ //REGISTERS//
+/////////////
+
 LOC P1 		= 0xFF00; //Reading joy pad info and determining system type. (R/W)
 LOC SB 		= 0xFF01; //Serial transfer data (R/W)
 LOC SC 		= 0xFF02; //SIO control (R/W)
