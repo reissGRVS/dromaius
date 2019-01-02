@@ -199,38 +199,8 @@ void GPU::renderBackground(){
 			unsigned int address = BACKGROUND_TILE_MAP+xTile+yTile*(32);
 
 			auto tileID = memoryMap.byte(address).val();
-
 			auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
-			auto pos = xOffset+yOffset*WIDTH;
-			framebuffer[pos] = pixel;
-
-			auto firstPos = 4*pos;
-			switch(pixel){
-				case 3:
-					/*R*/framebufferSF[firstPos] = 0;
-					/*G*/framebufferSF[firstPos+1] = 0;
-					/*B*/framebufferSF[firstPos+2] = 0;
-					/*A*/framebufferSF[firstPos+3] = 255;
-					break;
-				case 2:
-					/*R*/framebufferSF[firstPos] = 80;
-					/*G*/framebufferSF[firstPos+1] = 80;
-					/*B*/framebufferSF[firstPos+2] = 80;
-					/*A*/framebufferSF[firstPos+3] = 255;
-					break;
-				case 1:
-					/*R*/framebufferSF[firstPos] = 180;
-					/*G*/framebufferSF[firstPos+1] = 180;
-					/*B*/framebufferSF[firstPos+2] = 180;
-					/*A*/framebufferSF[firstPos+3] = 255;
-					break;
-				case 0:
-					/*R*/framebufferSF[firstPos] = 250;
-					/*G*/framebufferSF[firstPos+1] = 255;
-					/*B*/framebufferSF[firstPos+2] = 255;
-					/*A*/framebufferSF[firstPos+3] = 255;
-					break;
-			} 
+			drawPixel(pixel, xOffset, yOffset);
 		}
 	}
 }
@@ -240,19 +210,60 @@ const unsigned int MAX_SPRITES = 40;
 void GPU::renderSprites(){
 	auto address = SPRITE_OAM;
 	for (unsigned int sprite = 0; sprite < MAX_SPRITES; sprite++){
-		unsigned char y = memoryMap.byte(address++).val()-16;
-		// unsigned char x = memoryMap.byte(address++).val()-8;
-		// auto tileID = memoryMap.byte(address++).val();
-		// //TODO: implement all of these 
-		// auto attributes = memoryMap.byte(address++);
-		// //address++;
+		unsigned char yStart = memoryMap.byte(address++).val()-16;
+		unsigned char xStart = memoryMap.byte(address++).val()-8;
+		auto tileID = memoryMap.byte(address++).val();
+		//TODO: implement all of these 
+		auto attributes = memoryMap.byte(address++);
 
-		// sprites[sprite].setTexture(tileMap);
-		// sprites[sprite].setTextureRect(sf::IntRect(tileID*8,0, 8, 8));
-		// sprites[sprite].setPosition(sf::Vector2f(scx+x, scy+y));
+		for (auto y = 0; y < Tile::HEIGHT; y++){
+			for (auto x = 0; x < Tile::WIDTH; x++){
+				auto pixel = getTilePixel(tileID, x, y);
+				auto xTotal = xStart+x;
+				auto yTotal = yStart+y;
+				if (xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
+					drawPixel(pixel, xTotal, yTotal);
+				}
+			}
+		}
+		
 		// float xflip = attributes.getBit(5) ? -1 : 1; 
 		// float yflip = attributes.getBit(6) ? -1 : 1;
-		// sprites[sprite].setScale(xflip, yflip);
 	}
 
+}
+
+//TODO: Move to Window class
+void GPU::drawPixel(unsigned char pixel, unsigned char x, unsigned char y){
+	
+	auto pos = x+y*WIDTH;
+	framebuffer[pos] = pixel;
+
+	auto firstPos = 4*pos;
+	switch(pixel){
+		case 3:
+			/*R*/framebufferSF[firstPos] = 0;
+			/*G*/framebufferSF[firstPos+1] = 0;
+			/*B*/framebufferSF[firstPos+2] = 0;
+			/*A*/framebufferSF[firstPos+3] = 255;
+			break;
+		case 2:
+			/*R*/framebufferSF[firstPos] = 80;
+			/*G*/framebufferSF[firstPos+1] = 80;
+			/*B*/framebufferSF[firstPos+2] = 80;
+			/*A*/framebufferSF[firstPos+3] = 255;
+			break;
+		case 1:
+			/*R*/framebufferSF[firstPos] = 180;
+			/*G*/framebufferSF[firstPos+1] = 180;
+			/*B*/framebufferSF[firstPos+2] = 180;
+			/*A*/framebufferSF[firstPos+3] = 255;
+			break;
+		case 0:
+			/*R*/framebufferSF[firstPos] = 250;
+			/*G*/framebufferSF[firstPos+1] = 255;
+			/*B*/framebufferSF[firstPos+2] = 255;
+			/*A*/framebufferSF[firstPos+3] = 255;
+			break;
+	} 
 }

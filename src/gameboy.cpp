@@ -32,6 +32,7 @@ Gameboy::Gameboy(std::string cartridgeName) :
 			tickTotal = 0;
 			gpu.initialiseTileMapData();
 			gpu.renderBackground();
+			gpu.renderSprites();
 			//gpu.exportTileMap();
 			
 			background.update(gpu.framebufferSF.data());

@@ -33,7 +33,7 @@ class GPU{
 		void process(Ticks ticks);
 		void setMode(Mode m);
 		void initialiseTileMapData();
-		unsigned char getTilePixel(unsigned char tileID, unsigned char x, unsigned char y);
+		
 		std::array<sf::Uint8, 4* NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapDataSF;
 		std::array<sf::Uint8, 4* WIDTH*HEIGHT> framebufferSF;
 		void renderBackground();
@@ -41,11 +41,13 @@ class GPU{
 		void exportTileMap();
 	private:
 		MemoryMap& memoryMap;
-		Mode mode = Mode::OAM_SEARCH;
-
 		
+		unsigned char getTilePixel(unsigned char tileID, unsigned char x, unsigned char y);
+		void drawPixel(unsigned char pixel, unsigned char x, unsigned char y);
 		std::array<unsigned char, NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapData;
 		std::array<unsigned char, WIDTH*HEIGHT> framebuffer;
+
+		Mode mode = Mode::OAM_SEARCH;
 		Ticks tickCount = 0;
 		const Ticks ticksPerOamSearch = 80;
 		const Ticks ticksPerPixelTransfer = 172;
