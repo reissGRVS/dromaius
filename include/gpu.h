@@ -10,7 +10,8 @@ using Matrix = std::array<std::array<T, COL>, ROW>;
 
 //Number of tiles represented from 0x8000-0x9000 7FF
 const unsigned int NO_TILES = 256;
-
+const unsigned char WIDTH = 160;
+const unsigned char HEIGHT = 144;
 class Tile {
 	public:
 		static const unsigned char HEIGHT = 8;
@@ -31,25 +32,20 @@ class GPU{
 		GPU(MemoryMap& memoryMap);
 		void process(Ticks ticks);
 		void setMode(Mode m);
-
-		//Should maybe change this to be graphics platform agnostic
 		void initialiseTileMapData();
-		void frameBuffer();
+		unsigned char getTilePixel(unsigned char tileID, unsigned char x, unsigned char y);
+		std::array<sf::Uint8, 4* NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapDataSF;
+		std::array<sf::Uint8, 4* WIDTH*HEIGHT> framebufferSF;
 		void renderBackground();
 		void renderSprites();
-		std::array<sf::Sprite, 32 * 32> backgroundTiles;
-		std::array<sf::Sprite, 40> sprites;
+		void exportTileMap();
 	private:
-		sf::Uint8 * getTile(unsigned char tileID);
 		MemoryMap& memoryMap;
-		//Image of height 8 width NO_TILES*8 (3072 atm)
-		
-		std::array<sf::Uint8, NO_TILES * Tile::HEIGHT * Tile::WIDTH * 4> tileMapData;
-		sf::Texture tileMap;
-
-
 		Mode mode = Mode::OAM_SEARCH;
 
+		
+		std::array<unsigned char, NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapData;
+		std::array<unsigned char, WIDTH*HEIGHT> framebuffer;
 		Ticks tickCount = 0;
 		const Ticks ticksPerOamSearch = 80;
 		const Ticks ticksPerPixelTransfer = 172;

@@ -113,73 +113,127 @@ void GPU::setMode(Mode m){
 
 
 void GPU::initialiseTileMapData(){
-	auto address = VRAM_TILE_START; 
+	auto address = VRAM_TILE_START;
+	const unsigned int rowSize = NO_TILES*Tile::WIDTH;
 	for (auto tile = 0; tile < NO_TILES; tile++){
-		unsigned int tileStart = tile*Tile::WIDTH*4;
 		for (auto row = 0; row < Tile::HEIGHT; row++){
 			auto b1 = memoryMap.byte(address++);
 			auto b2 = memoryMap.byte(address++);
+
+			const unsigned int tileStart = tile*Tile::WIDTH;
 			for (auto column = 0; column < Tile::WIDTH; column++){
 				//Figure out colour
 				auto b1Bit = b1.getBit(Tile::WIDTH - column -1);
 				auto b2Bit = b2.getBit(Tile::WIDTH - column -1);
 				auto colourCode = (b2Bit << 1) + b1Bit;
 				//Add to the tileMapData
-				auto firstPos = tileStart + (row*(NO_TILES*Tile::WIDTH) + column)*4;
-				switch(colourCode){
-					case 3:
-						/*R*/tileMapData[firstPos] = 0;
-						/*G*/tileMapData[firstPos+1] = 0;
-						/*B*/tileMapData[firstPos+2] = 0;
-						/*A*/tileMapData[firstPos+3] = 255;
-						break;
-					case 2:
-						/*R*/tileMapData[firstPos] = 80;
-						/*G*/tileMapData[firstPos+1] = 80;
-						/*B*/tileMapData[firstPos+2] = 80;
-						/*A*/tileMapData[firstPos+3] = 255;
-						break;
-					case 1:
-						/*R*/tileMapData[firstPos] = 180;
-						/*G*/tileMapData[firstPos+1] = 180;
-						/*B*/tileMapData[firstPos+2] = 180;
-						/*A*/tileMapData[firstPos+3] = 255;
-						break;
-					case 0:
-						/*R*/tileMapData[firstPos] = 250;
-						/*G*/tileMapData[firstPos+1] = 255;
-						/*B*/tileMapData[firstPos+2] = 255;
-						/*A*/tileMapData[firstPos+3] = 255;
-						break;
-				} 
+				auto pos = tileStart + column + row*(rowSize);
+				tileMapData[pos] = colourCode;
 			}
-
 		}
 	}
-	tileMap.create(NO_TILES*8, 8);
-	tileMap.update(tileMapData.data());
-	//tileMap.copyToImage().saveToFile("tilemap.png");
+
 }
 
-sf::Uint8 * GPU::getTile(unsigned char tileID){
-	return tileMapData.data() + (tileID*4*Tile::WIDTH);
+void GPU::exportTileMap(){
+	for (auto x = 0; x < NO_TILES *Tile::WIDTH; x++){
+		for (auto y = 0; y < Tile::HEIGHT; y++){
+				
+			auto pos = x + y * NO_TILES *Tile::WIDTH;
+			auto firstPos = 4*pos;
+			auto colour = tileMapData[pos];
+			switch(colour){
+				case 3:
+					/*R*/tileMapDataSF[firstPos] = 0;
+					/*G*/tileMapDataSF[firstPos+1] = 0;
+					/*B*/tileMapDataSF[firstPos+2] = 0;
+					/*A*/tileMapDataSF[firstPos+3] = 255;
+					break;
+				case 2:
+					/*R*/tileMapDataSF[firstPos] = 80;
+					/*G*/tileMapDataSF[firstPos+1] = 80;
+					/*B*/tileMapDataSF[firstPos+2] = 80;
+					/*A*/tileMapDataSF[firstPos+3] = 255;
+					break;
+				case 1:
+					/*R*/tileMapDataSF[firstPos] = 180;
+					/*G*/tileMapDataSF[firstPos+1] = 180;
+					/*B*/tileMapDataSF[firstPos+2] = 180;
+					/*A*/tileMapDataSF[firstPos+3] = 255;
+					break;
+				case 0:
+					/*R*/tileMapDataSF[firstPos] = 250;
+					/*G*/tileMapDataSF[firstPos+1] = 255;
+					/*B*/tileMapDataSF[firstPos+2] = 255;
+					/*A*/tileMapDataSF[firstPos+3] = 255;
+					break;
+			} 
+		}
+	}
+
+	sf::Image tileMap;
+	tileMap.create(NO_TILES *Tile::WIDTH, Tile::HEIGHT, tileMapDataSF.data());
+	tileMap.saveToFile("tilemap.png");
 }
+
+unsigned char GPU::getTilePixel(unsigned char tileID, unsigned char x, unsigned char y){
+	return tileMapData[tileID*Tile::WIDTH + x + y*NO_TILES*Tile::WIDTH];
+}
+
 
 const unsigned int BACKGROUND_TILE_MAP = 0x9800;
 void GPU::renderBackground(){
 	//get background map
-	unsigned int address = BACKGROUND_TILE_MAP;
-	for (int y = 0; y < 32; y++ ) { //32x32tilemap
-		for (int x = 0; x < 32; x++ ){
-			auto tileID = memoryMap.byte(address++).val();
-			backgroundTiles[x+y*32].setTexture(tileMap);
-			backgroundTiles[x+y*32].setTextureRect(sf::IntRect(tileID*8,0, 8, 8));
-			backgroundTiles[x+y*32].setPosition(sf::Vector2f(x*8.f, y*8.f));
+	auto scx = memoryMap.byte(SCX).val();
+	auto scy = memoryMap.byte(SCY).val();
+	
+	for (unsigned char yOffset = 0; yOffset < HEIGHT; yOffset++ ) { //32x32tilemap
+		for (unsigned char xOffset = 0; xOffset < WIDTH; xOffset++ ){
+
+			unsigned char x = xOffset + scx;
+			unsigned char y = yOffset + scy;
+
+			unsigned char xTile = x/Tile::WIDTH;
+			unsigned char yTile = y/Tile::HEIGHT;
+			//TODO Magic Number
+			unsigned int address = BACKGROUND_TILE_MAP+xTile+yTile*(32);
+
+			auto tileID = memoryMap.byte(address).val();
+
+			auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
+			auto pos = xOffset+yOffset*WIDTH;
+			framebuffer[pos] = pixel;
+
+			auto firstPos = 4*pos;
+			switch(pixel){
+				case 3:
+					/*R*/framebufferSF[firstPos] = 0;
+					/*G*/framebufferSF[firstPos+1] = 0;
+					/*B*/framebufferSF[firstPos+2] = 0;
+					/*A*/framebufferSF[firstPos+3] = 255;
+					break;
+				case 2:
+					/*R*/framebufferSF[firstPos] = 80;
+					/*G*/framebufferSF[firstPos+1] = 80;
+					/*B*/framebufferSF[firstPos+2] = 80;
+					/*A*/framebufferSF[firstPos+3] = 255;
+					break;
+				case 1:
+					/*R*/framebufferSF[firstPos] = 180;
+					/*G*/framebufferSF[firstPos+1] = 180;
+					/*B*/framebufferSF[firstPos+2] = 180;
+					/*A*/framebufferSF[firstPos+3] = 255;
+					break;
+				case 0:
+					/*R*/framebufferSF[firstPos] = 250;
+					/*G*/framebufferSF[firstPos+1] = 255;
+					/*B*/framebufferSF[firstPos+2] = 255;
+					/*A*/framebufferSF[firstPos+3] = 255;
+					break;
+			} 
 		}
 	}
-	
 }
-
 
 const unsigned int MAX_SPRITES = 40;
 
@@ -187,27 +241,18 @@ void GPU::renderSprites(){
 	auto address = SPRITE_OAM;
 	for (unsigned int sprite = 0; sprite < MAX_SPRITES; sprite++){
 		unsigned char y = memoryMap.byte(address++).val()-16;
-		unsigned char x = memoryMap.byte(address++).val()-8;
-		auto tileID = memoryMap.byte(address++).val();
-		//TODO: implement all of these 
-		//auto attributes = memoryMap.byte(address++).val();
-		address++;
+		// unsigned char x = memoryMap.byte(address++).val()-8;
+		// auto tileID = memoryMap.byte(address++).val();
+		// //TODO: implement all of these 
+		// auto attributes = memoryMap.byte(address++);
+		// //address++;
 
-		auto scx = memoryMap.byte(SCX).val();
-		auto scy = memoryMap.byte(SCY).val();
-
-		sprites[sprite].setTexture(tileMap);
-		sprites[sprite].setTextureRect(sf::IntRect(tileID*8,0, 8, 8));
-		sprites[sprite].setPosition(sf::Vector2f(scx+x, scy+y));
-
+		// sprites[sprite].setTexture(tileMap);
+		// sprites[sprite].setTextureRect(sf::IntRect(tileID*8,0, 8, 8));
+		// sprites[sprite].setPosition(sf::Vector2f(scx+x, scy+y));
+		// float xflip = attributes.getBit(5) ? -1 : 1; 
+		// float yflip = attributes.getBit(6) ? -1 : 1;
+		// sprites[sprite].setScale(xflip, yflip);
 	}
 
-}
-
-void GPU::frameBuffer(){
-	//Add background
-	renderBackground();
-	//Add window
-
-	//Add sprites
 }
