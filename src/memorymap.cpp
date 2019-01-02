@@ -1,7 +1,7 @@
 #include "memorymap.h"
 #include "memorylocs.h"
 #include "bytes/byte.h"
-#include <SFML/Window/Keyboard.hpp>
+
 #include <fstream>
 #include <iostream>
 
@@ -33,6 +33,10 @@ MemoryMap::MemoryMap(std::string cartridgeName) {
 	}		
 }
 
+//Set the function that sets the P1 byte used for joypad checks
+void MemoryMap::setJoypadCallback(std::function<void(Byte)> joypadUpdate){
+	joypadUpdateByte = joypadUpdate;
+}
 
 //Once disabled it cannot be re-enabled
 bool MemoryMap::bootRomEnabled(){
@@ -54,48 +58,9 @@ void MemoryMap::startDMA(){
 
 Byte MemoryMap::byte(unsigned int address) {
 	//spdlog::get("console")->debug("LOC {:x}, VAL {:x}", address, cartridge[address]);
-	//TODO: Get rid, this should not belong here
-	//Override Joypad register, always reports no buttons pressed
+
 	if (address == P1){
-		auto p1Byte = Byte(&cartridge[P1]);
-		
-		auto right = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
-		auto left = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
-		auto up = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
-		auto down = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
-
-		auto a = sf::Keyboard::isKeyPressed(sf::Keyboard::K);
-		auto b = sf::Keyboard::isKeyPressed(sf::Keyboard::L);
-		auto select = sf::Keyboard::isKeyPressed(sf::Keyboard::Num2);
-		auto start = sf::Keyboard::isKeyPressed(sf::Keyboard::Num1);
-
-		auto directionSwitch = !p1Byte.getBit(4);
-		auto buttonSwitch = !p1Byte.getBit(5);
-
-
-		auto p10 = (directionSwitch && right) 	|| (buttonSwitch && a);
-		auto p11 = (directionSwitch && left) 	|| (buttonSwitch && b);
-		auto p12 = (directionSwitch && up) 		|| (buttonSwitch && select);
-		auto p13 = (directionSwitch && down) 	|| (buttonSwitch && start);
-		
-		p1Byte.setBit(0,	!p10);
-		p1Byte.setBit(1,	!p11);
-		p1Byte.setBit(2,	!p12);
-		p1Byte.setBit(3,	!p13);
-		
-
-		// 			P14 		P15
-		//  		| 			|
-		//  P10-----O-Right-----O-A
-		//  		| 			|
-		//  P11-----O-Left------O-B
-		//  		| 			|
-		//  P12-----O-Up--------O-Select
-		//  		| 			|
-		//  P13-----O-Down------O-Start
-		//http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
-
-		return p1Byte;
+		joypadUpdateByte(Byte(&cartridge[address]));
 	}
 
 	if (address == SC) {

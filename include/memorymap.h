@@ -7,6 +7,7 @@ class MemoryMap{
 	
 	public:
 		MemoryMap(std::string cartridgeName);
+		void setJoypadCallback(std::function<void(Byte)> joypadUpdate);
 		bool bootRomEnabled();
 		Byte byte(unsigned int address);
 		void startDMA();
@@ -16,4 +17,6 @@ class MemoryMap{
 		bool _bootRomEnabled = true;
 		unsigned int cartridgeSize;
 		unsigned int bootRomSize;
+
+		std::function<void(Byte)> joypadUpdateByte;
 };

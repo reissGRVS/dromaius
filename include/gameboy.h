@@ -4,6 +4,7 @@
 #include "gpu.h"
 #include "memorymap.h"
 #include "timer.h"
+#include "joypad.h"
 
 class Gameboy{
 	public:
@@ -14,4 +15,5 @@ class Gameboy{
 		CPU cpu;
 		GPU gpu;
 		Timer timer;
+		Joypad joypad;
 };
