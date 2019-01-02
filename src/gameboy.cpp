@@ -8,6 +8,8 @@
 Gameboy::Gameboy(std::string cartridgeName) :
 	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap), timer(memoryMap)
 {
+	memoryMap.setJoypadCallback(joypad.byteUpdate);
+
 
 	sf::RenderWindow window(sf::VideoMode(256,256), "Dromaius");
 	sf::View view;
@@ -26,18 +28,7 @@ Gameboy::Gameboy(std::string cartridgeName) :
 		//TODO: Change the location of this, maybe make a callback function for gpu to call
 		//This is each frame (~60Hz) 
 		if (tickTotal > (456*154)){
-			
-
-			// #include <SFML/Window/Keyboard.hpp>
-			// auto pause = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
-			// if (pause){
-			// 	cpu.ping();
-			// 	std::cin.get();
-			// }
-			// auto end = std::chrono::high_resolution_clock::now();
-			// std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end-begin).count() << "us" << std::endl;
-			// begin = std::chrono::high_resolution_clock::now();
-
+			joypad.keyUpdate();
 			tickTotal = 0;
 			gpu.initialiseTileMapData();
 			gpu.renderBackground();
