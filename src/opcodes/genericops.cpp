@@ -235,21 +235,15 @@ FLAG REGISTER OPERATIONS
 	}
 
 	unsigned int CPU::ADD_SP_s_result(){
-		char byte = (char)getNextByte().val();
+		SignedByte byte = (SignedByte)getNextByte().val();
 		Word & stackPointer = SP.word();
 		unsigned int result = stackPointer.val() + byte;
 
 		setZFlag(false);
 		setNFlag(false);
-
-		if (byte >= 0) {
-			setCFlag(((result & 0xFF) + byte) > 0xFF);
-			setHFlag(((result & 0x0F) + (byte & 0x0F)) > 0xF);
-		}
-		else {
-			setCFlag((stackPointer & 0xFF) <= (result & 0xFF));
-			setHFlag((stackPointer & 0xF) <= (result & 0xF));
-		}
+		setHFlag(((stackPointer ^ byte ^ result) & 0x10));
+    	setCFlag(((stackPointer ^ byte ^ result) & 0x100));
+		
 		return result;
 	}
 
@@ -374,21 +368,14 @@ JUMPS
 
 	//Only used for PC <- HL	 0xE9
 	Ticks CPU::JP_rr(Word newLoc){
-		Word & oldLoc = PC.word();
-		if (newLoc == oldLoc){
-			spdlog::get("stderr")->error("Infinite JP rr instruction");
-			exit(0);
-		}
-		oldLoc = newLoc;
+		PC.word() = newLoc;
 		return 4;
 	}
 
 	/* JP nn - PC <- nn
 	*/
 	Ticks CPU::JP_nn(){
-		Word newLoc = getNextWord();
-		Word & oldLoc = PC.word();
-		oldLoc = newLoc;
+		PC.word() = getNextWord();
 		return 16;
 	}
 

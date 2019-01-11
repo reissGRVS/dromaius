@@ -181,8 +181,9 @@ unsigned char GPU::getTilePixel(unsigned char tileID, unsigned char x, unsigned 
 }
 
 
-const unsigned int BACKGROUND_TILE_MAP = 0x9800;
 void GPU::renderBackground(){
+	auto statLCDC = memoryMap.byte(LCDC);
+	const unsigned int backgroundTileMap = statLCDC.getBit(3) ? 0x9C00 : 0x9800;
 	//get background map
 	auto scx = memoryMap.byte(SCX).val();
 	auto scy = memoryMap.byte(SCY).val();
@@ -196,11 +197,46 @@ void GPU::renderBackground(){
 			unsigned char xTile = x/Tile::WIDTH;
 			unsigned char yTile = y/Tile::HEIGHT;
 			//TODO Magic Number
-			unsigned int address = BACKGROUND_TILE_MAP+xTile+yTile*(32);
+			unsigned int address = backgroundTileMap+xTile+yTile*(32);
 
 			auto tileID = memoryMap.byte(address).val();
 			auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
 			drawPixel(pixel, xOffset, yOffset);
+		}
+	}
+}
+
+void GPU::renderWindow(){
+	//get background map
+	auto statLCDC = memoryMap.byte(LCDC);
+	//if window not enabled dont draw
+	if (statLCDC.getBit(5) == 0){
+		return;
+	}
+
+	const unsigned int windowTileMap = statLCDC.getBit(6) ? 0x9C00 : 0x9800;
+	auto wx = memoryMap.byte(WX).val();
+	auto wy = memoryMap.byte(WY).val();
+	
+	for (unsigned char yOffset = 0; yOffset < HEIGHT; yOffset++ ) { //32x32tilemap
+		for (unsigned char xOffset = 0; xOffset < WIDTH; xOffset++ ){
+
+			unsigned char x = xOffset;
+			unsigned char y = yOffset;
+
+			unsigned char xTile = x/Tile::WIDTH;
+			unsigned char yTile = y/Tile::HEIGHT;
+			//TODO Magic Number
+			unsigned int address = windowTileMap+xTile+yTile*(32);
+
+			auto tileID = memoryMap.byte(address).val();
+			auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
+			
+			auto xTotal = wx+x;
+			auto yTotal = wy+y;
+			if (pixel && xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
+					drawPixel(pixel, xTotal, yTotal);
+			}
 		}
 	}
 }
@@ -216,19 +252,25 @@ void GPU::renderSprites(){
 		//TODO: implement all of these 
 		auto attributes = memoryMap.byte(address++);
 
+		bool xflip = attributes.getBit(5); 
+		bool yflip = attributes.getBit(6);
+
 		for (auto y = 0; y < Tile::HEIGHT; y++){
 			for (auto x = 0; x < Tile::WIDTH; x++){
-				auto pixel = getTilePixel(tileID, x, y);
+
+				auto pixel = getTilePixel(	tileID, 
+											xflip ? (Tile::WIDTH - x - 1) : x, 
+											yflip ? (Tile::HEIGHT - y - 1) : y );
 				auto xTotal = xStart+x;
 				auto yTotal = yStart+y;
-				if (xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
+				//Checks if pixel is not 0 (transparent) and that it is in range of screen
+				if (pixel && xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
 					drawPixel(pixel, xTotal, yTotal);
 				}
 			}
 		}
 		
-		// float xflip = attributes.getBit(5) ? -1 : 1; 
-		// float yflip = attributes.getBit(6) ? -1 : 1;
+		
 	}
 
 }

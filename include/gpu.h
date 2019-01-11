@@ -37,6 +37,7 @@ class GPU{
 		std::array<sf::Uint8, 4* NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapDataSF;
 		std::array<sf::Uint8, 4* WIDTH*HEIGHT> framebufferSF;
 		void renderBackground();
+		void renderWindow();
 		void renderSprites();
 		void exportTileMap();
 	private:

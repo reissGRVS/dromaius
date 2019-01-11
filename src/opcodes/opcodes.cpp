@@ -11,10 +11,13 @@ const Operation CPU::instructionSet[0x100] = {
 			/*0x07*/	{"RLCA", [](CPU* cpu){ Ticks ticks = cpu->RLC(cpu->AF.first()); cpu->setZFlag(false); return ticks;}},
 
 			/*0x08*/	{"LD (a16),SP", [](CPU* cpu){
+							auto address = cpu->getNextWord();
+							
 							//Store low
-							cpu->LD_r_r(cpu->memoryMap.byte(cpu->getNextByte()), cpu->SP.second());
+							cpu->LD_r_r(cpu->memoryMap.byte(address), cpu->SP.second());
 							//Store high
-							cpu->LD_r_r(cpu->memoryMap.byte(cpu->getNextByte()), cpu->SP.first()); return 20;}},
+							cpu->LD_r_r(cpu->memoryMap.byte(address+1), cpu->SP.first()); 
+							return 20;}},
 			/*0x09*/	{"ADD HL,BC", [](CPU* cpu){ return cpu->ADD_HL_rr(cpu->BC.word()); }},
 			/*0x0A*/	{"LD A, (BC)", [](CPU* cpu){ return cpu->LD_r_r(cpu->AF.first(), cpu->memoryMap.byte(cpu->BC.word())); }},
 			/*0x0B*/	{"DEC BC", [](CPU* cpu){ return cpu->DEC_rr(cpu->BC.word()); }},
@@ -251,7 +254,7 @@ const Operation CPU::instructionSet[0x100] = {
 			/*0xD9*/	{"RETI", [](CPU* cpu){ return cpu->RETI(); }},
 			/*0xDA*/	{"JP C,a16", [](CPU* cpu){ return cpu->JP_cc_nn(cpu->getCFlag()); }},
 			/*0xDB*/	{"NULL", [](CPU*){ return 0; }},
-			/*0xD4*/	{"CALL C,a16", [](CPU* cpu){ return cpu->CALL_cc_nn(cpu->getCFlag()); }},
+			/*0xDC*/	{"CALL C,a16", [](CPU* cpu){ return cpu->CALL_cc_nn(cpu->getCFlag()); }},
 			/*0xDD*/	{"NULL", [](CPU*){ return 0; }},
 			/*0xDE*/	{"SBC A,d8", [](CPU* cpu){ return ADDRESS_FETCH + cpu->SBC_A_r(cpu->getNextByte());}},
 			/*0xDF*/	{"RST 18H", [](CPU* cpu){ return cpu->RST(0x18); }},

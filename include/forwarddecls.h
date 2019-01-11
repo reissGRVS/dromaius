@@ -5,4 +5,4 @@ class Byte;
 class Word;
 
 typedef unsigned int Ticks;
-typedef char SignedByte;
+typedef signed char SignedByte;

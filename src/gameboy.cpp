@@ -14,6 +14,8 @@ Gameboy::Gameboy(std::string cartridgeName) :
 	sf::RenderWindow window(sf::VideoMode(WIDTH,HEIGHT), "Dromaius");
 	sf::Texture background;
 	background.create(WIDTH, HEIGHT);
+	sf::Sprite b;
+	b.setTexture(background);
 
 	spdlog::get("console")->info("Powering up Gameboy");
 	Ticks tickTotal = 0;
@@ -32,12 +34,11 @@ Gameboy::Gameboy(std::string cartridgeName) :
 			tickTotal = 0;
 			gpu.initialiseTileMapData();
 			gpu.renderBackground();
+			gpu.renderWindow();
 			gpu.renderSprites();
 			//gpu.exportTileMap();
 			
 			background.update(gpu.framebufferSF.data());
-			sf::Sprite b;
-			b.setTexture(background);
 			window.clear();
 			window.draw(b);
 			window.display();
