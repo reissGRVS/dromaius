@@ -2,16 +2,21 @@
 using LOC = const uint16_t;
 
 
-LOC ROM_BANK_00 = 0x0000;
-LOC ROM_BANK_NN = 0x4000;
-LOC VIDEO_RAM = 0x8000;
-LOC WORK_RAM_0 = 0xC000;
-LOC WORK_RAM_1 = 0xD000;
-LOC ECHO_RAM = 0xE000;
-LOC SPRITE_OAM = 0xFE00;
+LOC ROM_BANK_00 	= 0x0000;
+LOC ROM_BANK_NN 	= 0x4000;
+LOC VIDEO_RAM 		= 0x8000;
+LOC EXTERNAL_RAM 	= 0xA000;
+LOC WORK_RAM_0 		= 0xC000;
+LOC WORK_RAM_1 		= 0xD000;
+LOC ECHO_RAM 		= 0xE000;
+LOC SPRITE_OAM 		= 0xFE00;
+LOC NOT_USABLE 		= 0xFEA0;
+LOC IO_PORTS 		= 0xFF00;
+LOC HIGH_RAM 		= 0xFF80;
+
 
   /////////////
- //REGISTERS//
+ // IO PORTS//
 /////////////
 
 LOC P1 		= 0xFF00; //Reading joy pad info and determining system type. (R/W)
@@ -66,7 +71,5 @@ LOC WY		= 0xFF4A; //Window Y Position (R/W)
 LOC WX		= 0xFF4B; //Window X Position (R/W)
 
 LOC BRD		= 0xFF50; //Boot Rom Disable
-
-LOC HIGH_RAM = 0xFF90;
 
 LOC IE 		= 0xFFFF; //Interrupt Enable (R/W)

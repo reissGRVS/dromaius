@@ -10,9 +10,9 @@
 
 int main(int argc, char* argv[]){
 
-	spdlog::set_level(spdlog::level::warn);
-	//auto console = spdlog::stdout_color_mt("console");
-	auto console = spdlog::rotating_logger_mt("console", "logs/rotating.txt", 1048576 * 30, 3);
+	spdlog::set_level(spdlog::level::info);
+	auto console = spdlog::stdout_color_mt("console");
+	//auto console = spdlog::rotating_logger_mt("console", "logs/rotating.txt", 1048576 * 30, 3);
 	auto err_logger = spdlog::stderr_color_mt("stderr");
 	
 

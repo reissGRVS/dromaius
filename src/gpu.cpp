@@ -250,7 +250,7 @@ void GPU::renderWindow(){
 			
 			auto xTotal = wx+x;
 			auto yTotal = wy+y;
-			if (pixel && xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
+			if (xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
 					drawPixel(pixel, xTotal, yTotal);
 			}
 		}

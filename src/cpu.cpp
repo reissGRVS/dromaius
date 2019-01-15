@@ -59,7 +59,7 @@ Ticks CPU::process(){
 		op = &cbInstructionSet[opcode];
 	}
 
-	spdlog::get("console")->info("At loc {:x} Opcode {:x} {}", location, opcode, op->mnemonic);
+	spdlog::get("console")->debug("At loc {:x} Opcode {:x} {}", location, opcode, op->mnemonic);
 	return op->action(this);;
 }
 
