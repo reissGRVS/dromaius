@@ -31,7 +31,17 @@ MemoryMap::MemoryMap(std::string cartridgeName) {
 	}
 	else {
 		spdlog::get("stderr")->error("Couldnt open cartridge");
-	}		
+	}
+
+	//Cartridge info
+	//Title
+	for (auto address = 0x134; address < 0x143; address++){
+		std::cout << byte(address).val();
+	}
+	std::cout << std::endl;
+	std::cout << "Cartridge type: " << (int)byte(0x147).val() << std::endl;
+	std::cout << "ROM size: " << (int)byte(0x148).val() << std::endl;
+	std::cout << "RAM size: " << (int)byte(0x149).val() << std::endl;
 }
 
 //Set the function that sets the P1 byte used for joypad checks
