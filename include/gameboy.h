@@ -16,4 +16,7 @@ class Gameboy{
 		GPU gpu;
 		Timer timer;
 		Joypad joypad;
+		sf::Sprite b;
+		sf::RenderWindow window;
+		sf::Texture background;
 };

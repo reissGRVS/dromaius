@@ -6,16 +6,30 @@
 #include <iostream>
 
 Gameboy::Gameboy(std::string cartridgeName) :
-	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap), timer(memoryMap)
+	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap), timer(memoryMap), window(sf::VideoMode(WIDTH,HEIGHT), "Dromaius")
 {
 	memoryMap.setJoypadCallback(joypad.byteUpdate);
 
-
-	sf::RenderWindow window(sf::VideoMode(WIDTH,HEIGHT), "Dromaius");
-	sf::Texture background;
+	//Window set up
 	background.create(WIDTH, HEIGHT);
-	sf::Sprite b;
 	b.setTexture(background);
+
+	gpu.setDrawCallback(
+			[this](){
+				joypad.keyUpdate();
+				gpu.initialiseTileMapData();
+				gpu.renderBackground();
+				gpu.renderWindow();
+				gpu.renderSprites();
+			
+			
+				background.update(gpu.framebufferSF.data());
+				window.clear();
+				window.draw(b);
+				window.display();}
+	);
+
+	
 
 	spdlog::get("console")->info("Powering up Gameboy");
 	Ticks tickTotal = 0;
@@ -26,24 +40,6 @@ Gameboy::Gameboy(std::string cartridgeName) :
 		tickTotal += ticks;
 		gpu.process(ticks);
 		timer.process(ticks);
-		
-		//TODO: Change the location of this, maybe make a callback function for gpu to call
-		//This is each frame (~60Hz) 
-		if (tickTotal > (456*154)){
-			joypad.keyUpdate();
-			tickTotal = 0;
-			gpu.initialiseTileMapData();
-			gpu.renderBackground();
-			gpu.renderWindow();
-			gpu.renderSprites();
-			//gpu.exportTileMap();
-			
-			background.update(gpu.framebufferSF.data());
-			window.clear();
-			window.draw(b);
-			window.display();
-
-		}
     }  
 	
 }

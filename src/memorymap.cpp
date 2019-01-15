@@ -56,13 +56,35 @@ void MemoryMap::startDMA(){
 
 }
 
+void MemoryMap::setVramAccess(bool value){
+	vramEnabled = value;
+}
+
+void MemoryMap::setOamAccess(bool value){
+	oamEnabled = value;
+}
+
+
 Byte MemoryMap::byte(unsigned int address) {
-	//spdlog::get("console")->debug("LOC {:x}, VAL {:x}", address, cartridge[address]);
+
 
 	if (address == P1){
 		joypadUpdateByte(Byte(&cartridge[address]));
 	}
+	//Echo memory
+	if (address >= 0xE000 && address < 0xFE00 ){
+		address -= 0x2000;
+	}
 
+	// if (!oamEnabled && address >= SPRITE_OAM && address < SPRITE_OAM+0x100){
+	// 	//return unused byte
+	// 	return Byte(&cartridge[address], ByteType::NO_WRITE);
+	// };
+	// if (!vramEnabled && address >= VRAM_TILE_START && address < VRAM_TILE_START+0x2000){
+	// 	return Byte(&cartridge[address], ByteType::NO_WRITE);
+	// };
+
+	//Link cable debugging
 	if (address == SC) {
 		std::cout << cartridge[SB];
 	}

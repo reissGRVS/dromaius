@@ -33,7 +33,7 @@ class GPU{
 		void process(Ticks ticks);
 		void setMode(Mode m);
 		void initialiseTileMapData();
-		
+		void setDrawCallback(std::function<void()> drawCallback);
 		std::array<sf::Uint8, 4* NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapDataSF;
 		std::array<sf::Uint8, 4* WIDTH*HEIGHT> framebufferSF;
 		void renderBackground();
@@ -54,6 +54,8 @@ class GPU{
 		const Ticks ticksPerPixelTransfer = 172;
 		const Ticks ticksPerHBlank = 204;
 		const Ticks ticksPerLine = ticksPerHBlank + ticksPerOamSearch + ticksPerPixelTransfer;
+
+		std::function<void()> draw;
 };
 
 

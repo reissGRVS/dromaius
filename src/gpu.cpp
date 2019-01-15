@@ -8,6 +8,10 @@ GPU::GPU(MemoryMap& gameboyMemory) :
 {
 }
 
+void GPU::setDrawCallback(std::function<void()> drawCallback){
+	draw = drawCallback;
+}
+
 void GPU::process(Ticks ticks){
 	tickCount += ticks;
 	
@@ -92,6 +96,7 @@ void GPU::setMode(Mode m){
 			break;
 		case Mode::V_BLANK:
 			//V-Blank interrupt
+			draw();
 			if (statLCD.getBit(4)){
 				memoryMap.byte(IF).setBit(1, 1);
 			}

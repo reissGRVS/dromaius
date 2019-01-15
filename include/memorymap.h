@@ -11,10 +11,14 @@ class MemoryMap{
 		bool bootRomEnabled();
 		Byte byte(unsigned int address);
 		void startDMA();
+		void setVramAccess(bool value);
+		void setOamAccess(bool value);
 	private:
 		std::array<unsigned char, 0x100> bootRom = {};
 		std::array<unsigned char, 0x10000> cartridge = {};
 		bool _bootRomEnabled = true;
+		bool vramEnabled = true;
+		bool oamEnabled = true;
 		unsigned int cartridgeSize;
 		unsigned int bootRomSize;
 
