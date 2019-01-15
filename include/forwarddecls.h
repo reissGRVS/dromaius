@@ -1,8 +1,8 @@
 #include "spdlog/spdlog.h"
+#include <cstdint>
 
 class CPU;
 class Byte;
 class Word;
 
-typedef unsigned int Ticks;
-typedef signed char SignedByte;
+using Ticks = uint16_t;

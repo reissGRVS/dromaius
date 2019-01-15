@@ -27,8 +27,8 @@ Byte CPU::getNextByte(){
 
 Word CPU::getNextWord(){
 
-	Byte low = getNextByte();
-	Byte high = getNextByte();
+	auto low = getNextByte();
+	auto high = getNextByte();
 	return composeWord(high, low);
 }
 
@@ -48,8 +48,8 @@ Ticks CPU::process(){
 		return 4;
 	}
 
-	unsigned int location = PC.word().val();
-	unsigned char opcode = getNextByte();
+	uint16_t location = PC.word().val();
+	uint8_t opcode = getNextByte();
 	const Operation * op = &instructionSet[opcode];
 	//If CB Prefix instruction
 	if (opcode == 0xCB) {
@@ -64,7 +64,7 @@ Ticks CPU::process(){
 }
 
 
-void CPU::handleInterrupt(unsigned char toHandle){
+void CPU::handleInterrupt(uint8_t toHandle){
 	//Reset IF flag for handled interrupt and disable interrupts
 	memoryMap.byte(IF).setBit(toHandle, false);
 	IME = false;
@@ -87,7 +87,7 @@ void CPU::handleInterrupt(unsigned char toHandle){
 			CPU::RST(0x60);
 			break;
 		default:
-			spdlog::get("stderr")->info("Handle interrupt called with invalid bit");
+			spdlog::get("stderr")->error("Handle interrupt called with invalid bit");
 			exit(0);
 	}
 }
@@ -95,9 +95,9 @@ void CPU::handleInterrupt(unsigned char toHandle){
 bool CPU::handleInterruptRequests() {
 	
 	//Check set IF flags
-	Byte interruptsRequested = memoryMap.byte(IF);
-	Byte interruptsEnabled = memoryMap.byte(IE);
-	unsigned char interrupts = interruptsEnabled & interruptsRequested;
+	auto interruptsRequested = memoryMap.byte(IF);
+	auto interruptsEnabled = memoryMap.byte(IE);
+	uint8_t interrupts = interruptsEnabled & interruptsRequested;
 
 	if(interrupts == 0){
 		return false;
@@ -109,7 +109,7 @@ bool CPU::handleInterruptRequests() {
 	}
 	
 	//Find lowest set bit
-	unsigned char lowestBit = 0;
+	uint8_t lowestBit = 0;
 	while(~interrupts & 0x01){
 		lowestBit++;
 		interrupts >>= 1;

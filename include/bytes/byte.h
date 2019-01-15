@@ -15,20 +15,19 @@ enum ByteType {
 class Byte{
 	friend class Word;
     public:
-    	Byte(unsigned char * val,  ByteType bt = ByteType::NORMAL, MemoryMap* mem = nullptr) : value(val), byteType(bt), memoryMap(mem)  {}
+    	Byte(uint8_t * val,  ByteType bt = ByteType::NORMAL, MemoryMap* mem = nullptr) : value(val), byteType(bt), memoryMap(mem)  {}
     	
-    	unsigned char val() const{
+    	uint8_t val() const{
     		return *value;
     	}
     
-    	virtual void set(const unsigned char val){
+    	virtual void set(const uint8_t val){
 			switch(byteType){
 				case ByteType::NORMAL:
 					*value = val;
 					break;
 				case ByteType::NO_WRITE:
-					spdlog::get("stderr")->info("Tried to write {:x} to protected byte", val);
-					exit(0);
+					spdlog::get("stderr")->error("Tried to write {:x} to protected byte", val);
 					break;
 				case ByteType::WRITE_RESET:
 					*value = 0;
@@ -45,15 +44,15 @@ class Byte{
     		set(b.val());
     	}
     	
-       	void operator=(const unsigned char & b){
+       	void operator=(const uint8_t & b){
     		set(b);
     	}
 
-		void operator|=(const unsigned char & b){
+		void operator|=(const uint8_t & b){
 			set(val() | b);
 		}
 
-		void operator&=(const unsigned char & b){
+		void operator&=(const uint8_t & b){
 			set(val() & b);
 		}
 
@@ -66,11 +65,11 @@ class Byte{
 			return *this;
 		}
 
-		operator unsigned char() const {
+		operator uint8_t() const {
 			return *value; 
 		}
 
-		void add(unsigned int v){
+		void add(uint16_t v){
 			set(val()+v);
 		}
 
@@ -78,14 +77,14 @@ class Byte{
 			add(rhs.val());
 		}
 
-		void operator+=(const unsigned char rhs){
+		void operator+=(const uint8_t rhs){
 			add(rhs);
 		}
 
     	//postfix
-		virtual unsigned char operator++( int ){
+		virtual uint8_t operator++( int ){
 
-			unsigned int returnVal = val();
+			uint16_t returnVal = val();
 			if (byteType == ByteType::WRITE_RESET){
 				//This is so it doesnt reset
 				*value+=1;	
@@ -96,7 +95,7 @@ class Byte{
 			return returnVal;
 		}
 
-		void subtract(unsigned char v){
+		void subtract(uint8_t v){
 			set(val()-v);
 		}
 
@@ -104,23 +103,23 @@ class Byte{
 			subtract(rhs.val());
 		}
 
-		void operator-=(const unsigned char rhs){
+		void operator-=(const uint8_t rhs){
 			subtract(rhs);
 		}
 
-		unsigned char operator--( int ){
-			unsigned int returnVal = val();
+		uint8_t operator--( int ){
+			uint16_t returnVal = val();
 			subtract(1);
 			return returnVal;
 		}
 
 
-		unsigned char getBit(unsigned char pos){
+		uint8_t getBit(uint8_t pos){
 			return (val() >> pos) & 1;
 		}
 
-		void setBit(unsigned char pos, bool bitVal){
-			unsigned char mask = 1 << pos;
+		void setBit(uint8_t pos, bool bitVal){
+			uint8_t mask = 1 << pos;
 			if (bitVal){
 				set( val() | mask);
 			}
@@ -130,7 +129,7 @@ class Byte{
 		}
 
 	protected:
-		unsigned char * value;
+		uint8_t * value;
 		const ByteType byteType;
 		MemoryMap* memoryMap;
 };

@@ -9,18 +9,20 @@ class MemoryMap{
 		MemoryMap(std::string cartridgeName);
 		void setJoypadCallback(std::function<void(Byte)> joypadUpdate);
 		bool bootRomEnabled();
-		Byte byte(unsigned int address);
+		Byte byte(uint16_t address);
 		void startDMA();
 		void setVramAccess(bool value);
 		void setOamAccess(bool value);
 	private:
-		std::array<unsigned char, 0x100> bootRom = {};
-		std::array<unsigned char, 0x10000> cartridge = {};
+		std::array<uint8_t, 0x100> bootRom = {};
+		std::array<uint8_t, 0x10000> cartridge = {};
 		bool _bootRomEnabled = true;
+		//Currently unused
 		bool vramEnabled = true;
 		bool oamEnabled = true;
-		unsigned int cartridgeSize;
-		unsigned int bootRomSize;
+		
+		uint16_t cartridgeSize;
+		uint16_t bootRomSize;
 
 		std::function<void(Byte)> joypadUpdateByte;
 };

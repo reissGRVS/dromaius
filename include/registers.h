@@ -13,8 +13,8 @@ class RegisterPair{
 		Byte & second(){return secondReg;}
 		
 	private:
-		unsigned char _first = 0;
-		unsigned char _second = 0;
+		uint8_t _first = 0;
+		uint8_t _second = 0;
 		Byte firstReg;
 		Byte secondReg;
 		Word wordReg;

@@ -9,14 +9,17 @@ template <class T, size_t ROW, size_t COL>
 using Matrix = std::array<std::array<T, COL>, ROW>;
 
 //Number of tiles represented from 0x8000-0x97FF
-const unsigned int NO_TILES = 384;
-const unsigned char WIDTH = 160;
-const unsigned char HEIGHT = 144;
+const uint16_t NO_TILES = 384;
+const uint8_t WIDTH = 160;
+const uint8_t HEIGHT = 144;
+const uint8_t TILEMAP_WIDTH = 32;
+const uint8_t TILEMAP_HEIGHT = 32;
+
 class Tile {
 	public:
-		static const unsigned char HEIGHT = 8;
-		static const unsigned char WIDTH = 8;
-		Matrix<unsigned char, HEIGHT, WIDTH> img;
+		static const uint8_t HEIGHT = 8;
+		static const uint8_t WIDTH = 8;
+		Matrix<uint8_t, HEIGHT, WIDTH> img;
 	
 };
 
@@ -43,10 +46,10 @@ class GPU{
 	private:
 		MemoryMap& memoryMap;
 		
-		unsigned char getTilePixel(unsigned char tileID, unsigned char x, unsigned char y);
-		void drawPixel(unsigned char pixel, unsigned char x, unsigned char y);
-		std::array<unsigned char, NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapData;
-		std::array<unsigned char, WIDTH*HEIGHT> framebuffer;
+		uint8_t getTilePixel(uint8_t tileID, uint8_t x, uint8_t y);
+		void drawPixel(uint8_t pixel, uint8_t x, uint8_t y);
+		std::array<uint8_t, NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapData;
+		std::array<uint8_t, WIDTH*HEIGHT> framebuffer;
 
 		Mode mode = Mode::OAM_SEARCH;
 		Ticks tickCount = 0;

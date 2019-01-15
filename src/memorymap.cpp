@@ -46,9 +46,8 @@ bool MemoryMap::bootRomEnabled(){
 
 void MemoryMap::startDMA(){
 	spdlog::get("console")->info("DMA");
-	unsigned int sourceOffset = cartridge[DMA];
-	sourceOffset = sourceOffset<<8; //Source:      XX00-XX9F   ;XX in range from 00-F1h
-
+	uint16_t sourceOffset = cartridge[DMA]; //Source: XX00-XX9F XX in range from 00-F1h;
+	sourceOffset = sourceOffset<<8;
 	for (int i = 0; i < 0xA0; i++){
 		cartridge[SPRITE_OAM+i] = cartridge[sourceOffset+i];
 	}
@@ -65,22 +64,24 @@ void MemoryMap::setOamAccess(bool value){
 }
 
 
-Byte MemoryMap::byte(unsigned int address) {
+Byte MemoryMap::byte(uint16_t address) {
 
 
 	if (address == P1){
+		//Update joypad input byte with current key inputs
 		joypadUpdateByte(Byte(&cartridge[address]));
 	}
+
 	//Echo memory
-	if (address >= 0xE000 && address < 0xFE00 ){
-		address -= 0x2000;
+	if (address >= ECHO_RAM && address < SPRITE_OAM ){
+		address -= (ECHO_RAM-WORK_RAM_0);
 	}
 
-	// if (!oamEnabled && address >= SPRITE_OAM && address < SPRITE_OAM+0x100){
-	// 	//return unused byte
+	// if (!oamEnabled && address >= SPRITE_OAM && address < (SPRITE_OAM+0x100)){
 	// 	return Byte(&cartridge[address], ByteType::NO_WRITE);
 	// };
-	// if (!vramEnabled && address >= VRAM_TILE_START && address < VRAM_TILE_START+0x2000){
+
+	// if (!vramEnabled && address >= VIDEO_RAM && address < (VIDEO_RAM+0x2000)){
 	// 	return Byte(&cartridge[address], ByteType::NO_WRITE);
 	// };
 
@@ -101,6 +102,10 @@ Byte MemoryMap::byte(unsigned int address) {
 		return Byte(&bootRom[address], ByteType::NO_WRITE);
 	}
 	else{
+		//if ROM
+		if (address < VIDEO_RAM){
+			return Byte(&cartridge[address], ByteType::NO_WRITE);
+		}
 		return Byte(&cartridge[address]);
 	}
 }

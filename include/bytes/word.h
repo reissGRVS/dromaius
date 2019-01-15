@@ -3,7 +3,7 @@
 
 class Word{
 	public:
-		Word(unsigned char * first,unsigned char * second):
+		Word(uint8_t * first,uint8_t * second):
 			firstReg(first), secondReg(second)
 		{}
 
@@ -11,45 +11,45 @@ class Word{
 			firstReg(first.value), secondReg(second.value)
 		{}
 
-		unsigned int val() const{
+		uint16_t val() const{
 			return ((*firstReg << 8) + *secondReg); 
 		}
 
-		void set(const unsigned int val){
+		void set(const uint16_t val){
 			*firstReg = val >> 8;
 			*secondReg = val & 0xFF;
 		}
 
-		operator unsigned int() const {
+		operator uint16_t() const {
 			return val();
 		}
 
-		void add(unsigned int v){
+		void add(uint16_t v){
 			set(val()+v);
 		}
 		void operator+=(const Word& rhs){
 			add(rhs.val());
 		}
-		void operator+=(const unsigned int rhs){
+		void operator+=(const uint16_t rhs){
 			add(rhs);
 		}
     	//postfix
-		unsigned int operator++( int ){
-			unsigned int returnVal = val();
+		uint16_t operator++( int ){
+			uint16_t returnVal = val();
 			add(1);
 			return returnVal;
 		}
 
-		void subtract(unsigned int v){
+		void subtract(uint16_t v){
 			set(val()-v);
 		}
-		unsigned int operator--( int ){
-			unsigned int returnVal = val();
+		uint16_t operator--( int ){
+			uint16_t returnVal = val();
 			subtract(1);
 			return returnVal;
 		}
 
-       	void operator=(const unsigned int & v){
+       	void operator=(const uint16_t & v){
     		set(v);
     	}
 		void operator=(const Word & w){
@@ -58,7 +58,7 @@ class Word{
 		
 	private:
 		//high
-		unsigned char * firstReg;
+		uint8_t * firstReg;
 		//low
-		unsigned char * secondReg;
+		uint8_t * secondReg;
 };

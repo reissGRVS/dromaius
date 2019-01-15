@@ -1,4 +1,4 @@
-using FREQ = const unsigned int;
+using FREQ = const uint32_t;
 
 FREQ CPU_CLOCK = 4194304;
 FREQ TAC_00 = 4096;

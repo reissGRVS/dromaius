@@ -36,7 +36,6 @@ void GPU::process(Ticks ticks){
 				if(lyMatch && stat.getBit(6)){
 					memoryMap.byte(IF).setBit(1, 1);
 				}
-
 			}
 			break;
 		case Mode::H_BLANK:
@@ -48,8 +47,7 @@ void GPU::process(Ticks ticks){
 				//TODO: Draw this line
 				byteLY++;
 
-				//144 Gameboy screen height TODO magic number
-				if (byteLY == 144){
+				if (byteLY == HEIGHT){
 					//VBlank interrupt
 					memoryMap.byte(IF).setBit(0, 1);
 					setMode(Mode::V_BLANK);
@@ -57,7 +55,6 @@ void GPU::process(Ticks ticks){
 				else{
 					setMode(Mode::OAM_SEARCH);
 				}
-
 			}
 			break;
 		case Mode::V_BLANK:
@@ -68,14 +65,13 @@ void GPU::process(Ticks ticks){
 
 				if (byteLY == 154){
 					//TODO: last LY is meant to be shorter http://gameboy.mongenel.com/dmg/istat98.txt
-					//TODO: push current buffer to screen
 					byteLY = 0;
 					setMode(Mode::OAM_SEARCH);
 				}
 			}
 			break;
 		default:
-			spdlog::get("stderr")->info("invalid GPU mode");
+			spdlog::get("stderr")->error("invalid GPU mode");
 			exit(0);
 	}
 }
@@ -123,14 +119,14 @@ void GPU::setMode(Mode m){
 
 
 void GPU::initialiseTileMapData(){
-	auto address = VRAM_TILE_START;
-	const unsigned int rowSize = NO_TILES*Tile::WIDTH;
-	for (unsigned int tile = 0; tile < NO_TILES; tile++){
+	auto address = VIDEO_RAM;
+	const uint16_t rowSize = NO_TILES*Tile::WIDTH;
+	for (uint16_t tile = 0; tile < NO_TILES; tile++){
 		for (auto row = 0; row < Tile::HEIGHT; row++){
 			auto b1 = memoryMap.byte(address++);
 			auto b2 = memoryMap.byte(address++);
 
-			const unsigned int tileStart = tile*Tile::WIDTH;
+			const uint16_t tileStart = tile*Tile::WIDTH;
 			for (auto column = 0; column < Tile::WIDTH; column++){
 				//Figure out colour
 				auto b1Bit = b1.getBit(Tile::WIDTH - column -1);
@@ -146,7 +142,7 @@ void GPU::initialiseTileMapData(){
 }
 
 void GPU::exportTileMap(){
-	for (unsigned int x = 0; x < NO_TILES *Tile::WIDTH; x++){
+	for (uint16_t x = 0; x < NO_TILES *Tile::WIDTH; x++){
 		for (auto y = 0; y < Tile::HEIGHT; y++){
 				
 			auto pos = x + y * NO_TILES *Tile::WIDTH;
@@ -186,7 +182,7 @@ void GPU::exportTileMap(){
 	tileMap.saveToFile("tilemap.png");
 }
 
-unsigned char GPU::getTilePixel(unsigned char tileID, unsigned char x, unsigned char y){
+uint8_t GPU::getTilePixel(uint8_t tileID, uint8_t x, uint8_t y){
 	if (memoryMap.byte(LCDC).getBit(4) == 0){
 		//8800-97FF 9000 is tile 0, 8800 is -128
 		//Change "signed" byte counting from 9000 to unsigned counting from 8800
@@ -205,21 +201,20 @@ void GPU::renderBackground(){
 	if (lcdc.getBit(0) == 0){
 		return;
 	}
-	const unsigned int backgroundTileMap = lcdc.getBit(3) ? 0x9C00 : 0x9800;
+	const uint16_t backgroundTileMap = lcdc.getBit(3) ? 0x9C00 : 0x9800;
 	//get background map
 	auto scx = memoryMap.byte(SCX).val();
 	auto scy = memoryMap.byte(SCY).val();
 	
-	for (unsigned char yOffset = 0; yOffset < HEIGHT; yOffset++ ) { //32x32tilemap
-		for (unsigned char xOffset = 0; xOffset < WIDTH; xOffset++ ){
+	for (uint8_t yOffset = 0; yOffset < HEIGHT; yOffset++ ) { //32x32tilemap
+		for (uint8_t xOffset = 0; xOffset < WIDTH; xOffset++ ){
 
-			unsigned char x = xOffset + scx;
-			unsigned char y = yOffset + scy;
+			uint8_t x = xOffset + scx;
+			uint8_t y = yOffset + scy;
 
-			unsigned char xTile = x/Tile::WIDTH;
-			unsigned char yTile = y/Tile::HEIGHT;
-			//TODO Magic Number
-			unsigned int address = backgroundTileMap+xTile+yTile*(32);
+			uint8_t xTile = x/Tile::WIDTH;
+			uint8_t yTile = y/Tile::HEIGHT;
+			uint16_t address = backgroundTileMap+xTile+yTile*(TILEMAP_WIDTH);
 
 			auto tileID = memoryMap.byte(address).val();
 			auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
@@ -235,20 +230,20 @@ void GPU::renderWindow(){
 		return;
 	}
 
-	const unsigned int windowTileMap = lcdc.getBit(6) ? 0x9C00 : 0x9800;
+	const uint16_t windowTileMap = lcdc.getBit(6) ? 0x9C00 : 0x9800;
 	auto wx = memoryMap.byte(WX).val();
 	auto wy = memoryMap.byte(WY).val();
 	
-	for (unsigned char yOffset = 0; yOffset < HEIGHT; yOffset++ ) { //32x32tilemap
-		for (unsigned char xOffset = 0; xOffset < WIDTH; xOffset++ ){
+	for (uint8_t yOffset = 0; yOffset < HEIGHT; yOffset++ ) { //32x32tilemap
+		for (uint8_t xOffset = 0; xOffset < WIDTH; xOffset++ ){
 
-			unsigned char x = xOffset;
-			unsigned char y = yOffset;
+			uint8_t x = xOffset;
+			uint8_t y = yOffset;
 
-			unsigned char xTile = x/Tile::WIDTH;
-			unsigned char yTile = y/Tile::HEIGHT;
+			uint8_t xTile = x/Tile::WIDTH;
+			uint8_t yTile = y/Tile::HEIGHT;
 			//TODO Magic Number
-			unsigned int address = windowTileMap+xTile+yTile*(32);
+			uint16_t address = windowTileMap+xTile+yTile*(32);
 
 			auto tileID = memoryMap.byte(address).val();
 			auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
@@ -262,7 +257,7 @@ void GPU::renderWindow(){
 	}
 }
 
-const unsigned int MAX_SPRITES = 40;
+const uint16_t MAX_SPRITES = 40;
 
 void GPU::renderSprites(){
 	auto lcdc = memoryMap.byte(LCDC);
@@ -271,9 +266,9 @@ void GPU::renderSprites(){
 		return;
 	}
 	auto address = SPRITE_OAM;
-	for (unsigned int sprite = 0; sprite < MAX_SPRITES; sprite++){
-		unsigned char yStart = memoryMap.byte(address++).val()-16;
-		unsigned char xStart = memoryMap.byte(address++).val()-8;
+	for (uint16_t sprite = 0; sprite < MAX_SPRITES; sprite++){
+		uint8_t yStart = memoryMap.byte(address++).val()-16;
+		uint8_t xStart = memoryMap.byte(address++).val()-8;
 		auto tileID = memoryMap.byte(address++).val();
 		//TODO: implement all of these 
 		auto attributes = memoryMap.byte(address++);
@@ -302,7 +297,7 @@ void GPU::renderSprites(){
 }
 
 //TODO: Move to Window class
-void GPU::drawPixel(unsigned char pixel, unsigned char x, unsigned char y){
+void GPU::drawPixel(uint8_t pixel, uint8_t x, uint8_t y){
 	
 	auto pos = x+y*WIDTH;
 	framebuffer[pos] = pixel;

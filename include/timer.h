@@ -10,7 +10,7 @@ class Timer{
 		void process(Ticks ticks);
 	
 	private:
-		unsigned int clock();
+		uint16_t clock();
 		//Timer ticks
 		Ticks t;
 		//DIV ticks

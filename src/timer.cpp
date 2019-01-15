@@ -14,7 +14,7 @@ Timer::Timer(MemoryMap& mem) :
 void Timer::process(Ticks ticks){
 	d+=ticks;
 	if (d > DIV_TICKS){
-		div+= d/DIV_TICKS;
+		div++;
 		d%=DIV_TICKS;
 	}
 
@@ -23,7 +23,7 @@ void Timer::process(Ticks ticks){
 		t+=ticks;
 		auto ticksPerClock = clock();
 		if (t > ticksPerClock){
-			unsigned int clockInc = t/ticksPerClock;
+			uint16_t clockInc = t/ticksPerClock;
 			t %= ticksPerClock;
 
 			while(clockInc){
@@ -42,8 +42,8 @@ void Timer::process(Ticks ticks){
 	}
 }
 
-unsigned int Timer::clock(){
-	unsigned char clockSelect = (tac.getBit(1) << 1) + tac.getBit(0);
+uint16_t Timer::clock(){
+	uint8_t clockSelect = (tac.getBit(1) << 1) + tac.getBit(0);
 
 	switch(clockSelect){
 		case 0: //00

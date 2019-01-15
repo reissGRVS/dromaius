@@ -14,10 +14,17 @@ class CPU{
 
 	private:
 		RegisterPair AF;
-		Byte& flag = AF.second();
+		Byte& A = AF.first();
+		Byte& F = AF.second();
 		RegisterPair BC;
+		Byte& B = BC.first();
+		Byte& C = BC.second();
 		RegisterPair DE;
+		Byte& D = DE.first();
+		Byte& E = DE.second();
 		RegisterPair HL;
+		Byte& H = HL.first();
+		Byte& L = HL.second();
 		//These should probably be a seperate thing, as should only be accessed as a word
 		RegisterPair SP;
 		RegisterPair PC;
@@ -36,7 +43,7 @@ class CPU{
 
 		//INTERRUPTS
 		bool handleInterruptRequests();
-		void handleInterrupt(unsigned char toHandle);
+		void handleInterrupt(uint8_t toHandle);
 		
 		void setHalt(bool h){
 			halt = h;
@@ -44,7 +51,6 @@ class CPU{
 		
 		//FLAG REGISTER OPERATIONS
 
-			void setFlagBit(bool b, unsigned char mask);
 			void setZFlag(bool z);
 			bool getZFlag();
 			void setNFlag(bool z);
@@ -65,7 +71,8 @@ class CPU{
 			16BIT LOADS
 			***/
 				Ticks LD_r_nn(Word& reg);
-				void LD_rr_rr(Word& destination, unsigned int source);
+				void LD_rr_rr(Word& destination, uint16_t source);
+				Ticks LD_aa_SP();
 				Ticks POP_rr(Word& reg);
 				Ticks PUSH_rr(RegisterPair& reg);
 			/***
@@ -85,7 +92,7 @@ class CPU{
 			16BIT ALU
 			***/
 				Ticks ADD_HL_rr(Word& word);
-				unsigned int ADD_SP_s_result();
+				uint16_t ADD_SP_s_result();
 				Ticks ADD_SP_s();
 				Ticks INC_rr(Word& word);
 				Ticks DEC_rr(Word& word);
@@ -101,7 +108,7 @@ class CPU{
 			/***
 			JUMPS
 			***/
-				Ticks RST(unsigned char f);
+				Ticks RST(uint8_t f);
 				Ticks CALL_nn();
 				Ticks CALL_cc_nn(bool condition);
 				Ticks JP_rr(Word newLoc);
@@ -112,7 +119,7 @@ class CPU{
 			/***
 			ROTATES & SHIFTS
 			***/
-				unsigned char getBit(Byte byte, unsigned char bit);
+				uint8_t getBit(Byte byte, uint8_t bit);
 				Ticks RLC(Byte byte);
 				Ticks RL(Byte byte);
 				Ticks RRC(Byte byte);
@@ -130,9 +137,9 @@ class CPU{
 			/***
 			BIT
 			***/
-				Ticks BIT_b_r(unsigned char bit, Byte reg);
-				Ticks SET_b_r(unsigned char bit, Byte reg);
-				Ticks RES_b_r(unsigned char bit, Byte reg);
+				Ticks BIT_b_r(uint8_t bit, Byte reg);
+				Ticks SET_b_r(uint8_t bit, Byte reg);
+				Ticks RES_b_r(uint8_t bit, Byte reg);
 			
 		//OPCODES
 			static const Operation instructionSet[0x100];

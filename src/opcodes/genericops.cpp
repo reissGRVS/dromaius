@@ -3,37 +3,32 @@
 FLAG REGISTER OPERATIONS
 ***/
 
-	void CPU::setFlagBit(bool bitVal, unsigned char pos){
-		AF.second().setBit(pos, bitVal);;
-	}
-	
 	void CPU::setZFlag(bool z){
-		setFlagBit(z, 7);
+		F.setBit(7, z);
 	}
 	bool CPU::getZFlag(){
-		return AF.second().getBit(7);
+		return F.getBit(7);
 	}
 	
 	void CPU::setNFlag(bool z){
-		setFlagBit(z, 6);
+		F.setBit(6, z);
 	}
 	bool CPU::getNFlag(){
-		return AF.second().getBit(6);
+		return F.getBit(6);
 	}
 	
 	void CPU::setHFlag(bool z){			
-		setFlagBit(z, 5);
+		F.setBit(5, z);
 	}
 	bool CPU::getHFlag(){
-		return AF.second().getBit(5);
+		return F.getBit(5);
 	}
 
 	void CPU::setCFlag(bool z){
-		setFlagBit(z, 4);
+		F.setBit(4, z);
 	}
-
 	bool CPU::getCFlag(){
-		return AF.second().getBit(4);
+		return F.getBit(4);
 	}
 
 
@@ -72,12 +67,21 @@ FLAG REGISTER OPERATIONS
 	}
 
 	//Only two opcodes use cpu and they both have different ticks
-	void CPU::LD_rr_rr(Word& destination, unsigned int source){
+	void CPU::LD_rr_rr(Word& destination, uint16_t source){
 		destination = source;
 	}
 
+	Ticks CPU::LD_aa_SP(){
+		auto address = getNextWord();
+		//Store low
+		LD_r_r(memoryMap.byte(address), SP.second());
+		//Store high
+		LD_r_r(memoryMap.byte(address+1), SP.first()); 
+		return 20;
+	}
+
 	Ticks CPU::POP_rr(Word& reg){
-		Word& stackPointer = SP.word();
+		Word & stackPointer = SP.word();
 		Byte low = memoryMap.byte(stackPointer++);
 		Byte high = memoryMap.byte(stackPointer++);
 		reg = composeWord(high, low);
@@ -85,7 +89,7 @@ FLAG REGISTER OPERATIONS
 	}
 
 	Ticks CPU::PUSH_rr(RegisterPair& reg){
-		Word& stackPointer = SP.word();
+		Word & stackPointer = SP.word();
 		stackPointer--;
 		memoryMap.byte(stackPointer) = reg.first();
 		stackPointer--;
@@ -99,8 +103,6 @@ FLAG REGISTER OPERATIONS
 	/* ADD A,s	A <- A+s
 	*/
 	Ticks CPU::ADD_A_r(Byte add){
-		Byte& A = AF.first();
-		
 		setNFlag(false);
 		setCFlag((A+add) > 0xFF);
 		setHFlag((A&0x0F) + (add&0x0F) > 0x0f);
@@ -112,8 +114,7 @@ FLAG REGISTER OPERATIONS
 	/* ADC A,s  A <- A+s+CY
 	*/
 	Ticks CPU::ADC_A_r(Byte add){
-		Byte& A = AF.first();
-		unsigned char carry = getCFlag() ? 1 : 0;
+		uint8_t carry = getCFlag() ? 1 : 0;
 		setNFlag(false);
 		setCFlag((A+add+carry) > 0xFF);
 		setHFlag((A&0x0F) + (add&0x0F) + carry > 0x0f);
@@ -125,8 +126,6 @@ FLAG REGISTER OPERATIONS
 	/* SUB A,s	A <- A-s
 	*/
 	Ticks CPU::SUB_A_r(Byte sub){
-		Byte& A = AF.first();
-		
 		setNFlag(true);
 		setCFlag(A < sub);
 		setHFlag((A&0x0F) < (sub&0x0F));
@@ -138,8 +137,7 @@ FLAG REGISTER OPERATIONS
 	/* SBC A,s  A <- A-s-CY
 	*/
 	Ticks CPU::SBC_A_r(Byte sub){
-		Byte& A = AF.first();
-		unsigned char carry = getCFlag() ? 1 : 0;
+		uint8_t carry = getCFlag() ? 1 : 0;
 
 		setNFlag(true);
 		setCFlag(A < (sub + carry));
@@ -156,7 +154,6 @@ FLAG REGISTER OPERATIONS
 		setCFlag(false);
 		setHFlag(true);
 
-		Byte& A = AF.first();
 		A &= byte;
 		setZFlag(A == 0);
 		return 4;
@@ -169,7 +166,6 @@ FLAG REGISTER OPERATIONS
 		setCFlag(false);
 		setHFlag(false);
 
-		Byte& A = AF.first();
 		A |= byte;
 		setZFlag(A == 0);
 		return 4;
@@ -182,7 +178,6 @@ FLAG REGISTER OPERATIONS
 		setCFlag(false);
 		setHFlag(false);
 
-		Byte& A = AF.first();
 		A ^= byte;
 		setZFlag(A == 0);
 		return 4;
@@ -191,7 +186,6 @@ FLAG REGISTER OPERATIONS
 	/* CP s - same as SUB but without update of A
 	*/
 	Ticks CPU::CP_A_r(Byte sub){
-		Byte& A = AF.first();
 		setNFlag(true);
 		setCFlag(A < sub);
 		setHFlag((A&0x0F) < (sub&0x0F));
@@ -234,10 +228,10 @@ FLAG REGISTER OPERATIONS
 		return 8;
 	}
 
-	unsigned int CPU::ADD_SP_s_result(){
-		SignedByte byte = (SignedByte)getNextByte().val();
+	uint16_t CPU::ADD_SP_s_result(){
+		int8_t byte = (int8_t)getNextByte().val();
 		Word & stackPointer = SP.word();
-		unsigned int result = stackPointer.val() + byte;
+		uint16_t result = stackPointer.val() + byte;
 
 		setZFlag(false);
 		setNFlag(false);
@@ -308,9 +302,7 @@ MISC
 	/*DAA - https://ehaskins.com/2018-01-30%20Z80%20DAA/
 	*/
 	Ticks CPU::DAA(){
-		auto A = AF.first();
-
-		unsigned char correction = 0x00;
+		uint8_t correction = 0x00;
 		//if the last addition caused the first nibble to be greater than 9 then correct by 6
 		//the half carry flag covers the cases where it is greater than 15
 		if ((!getNFlag() && ((A & 0x0F) > 9)) || getHFlag()) {
@@ -340,7 +332,7 @@ JUMPS
 
 	/* RST f
 	*/
-	Ticks CPU::RST(unsigned char f){
+	Ticks CPU::RST(uint8_t f){
 		PUSH_rr(PC);
 		PC.word() = f;
 		return 16;
@@ -393,7 +385,7 @@ JUMPS
 	}
 	
 	Ticks CPU::JR_n() {
-		SignedByte jumpSize = (SignedByte)getNextByte();
+		int8_t jumpSize = (int8_t)getNextByte();
 
 		PC.word() += jumpSize;
 		
@@ -415,14 +407,14 @@ JUMPS
 ROTATES & SHIFTS
 ***/
 
-	unsigned char CPU::getBit(Byte byte, unsigned char bit){
+	uint8_t CPU::getBit(Byte byte, uint8_t bit){
 		return (byte.val() >> bit) & 1;
 	}
 
 	/* RLC
 	*/
 	Ticks CPU::RLC(Byte byte){
-		unsigned char carrybit =  getBit(byte, 7);
+		uint8_t carrybit = getBit(byte, 7);
 		byte = (byte << 1) + carrybit;
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -434,8 +426,8 @@ ROTATES & SHIFTS
 	/* RL
 	*/
 	Ticks CPU::RL(Byte byte){
-		unsigned char carrybit =  getBit(byte, 7);
-		unsigned char firstbit = getCFlag() ? 1 : 0;
+		uint8_t carrybit = getBit(byte, 7);
+		uint8_t firstbit = getCFlag() ? 1 : 0;
 		byte = (byte << 1) + firstbit;
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -447,7 +439,7 @@ ROTATES & SHIFTS
 	/* RRC
 	*/
 	Ticks CPU::RRC(Byte byte){
-		unsigned char carrybit =  getBit(byte, 0);
+		uint8_t carrybit = getBit(byte, 0);
 		byte = (byte >> 1) + (carrybit << 7);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -458,8 +450,8 @@ ROTATES & SHIFTS
 	/* RR
 	*/
 	Ticks CPU::RR(Byte byte){
-		unsigned char carrybit = getBit(byte, 0);
-		unsigned char lastbit = getCFlag() ? 1 : 0;
+		uint8_t carrybit = getBit(byte, 0);
+		uint8_t lastbit = getCFlag() ? 1 : 0;
 		byte = (byte >> 1) + (lastbit << 7);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -471,7 +463,7 @@ ROTATES & SHIFTS
 	//SLA, SRA, SWAP, SRL
 
 	Ticks CPU::SLA(Byte byte){
-		unsigned char carrybit =  getBit(byte, 7);
+		uint8_t carrybit = getBit(byte, 7);
 		byte = (byte << 1);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -481,8 +473,8 @@ ROTATES & SHIFTS
 	}
 	
 	Ticks CPU::SRA(Byte byte){
-		unsigned char lastbit =  getBit(byte, 7);
-		unsigned char carrybit =  getBit(byte, 0);
+		uint8_t lastbit = getBit(byte, 7);
+		uint8_t carrybit = getBit(byte, 0);
 		byte = (byte >> 1)+ (lastbit << 7);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -492,7 +484,7 @@ ROTATES & SHIFTS
 	}
 
 	Ticks CPU::SRL(Byte byte){
-		unsigned char carrybit =  getBit(byte, 0);
+		uint8_t carrybit = getBit(byte, 0);
 		byte = (byte >> 1);
 		setCFlag(carrybit);
 		setZFlag(byte == 0);
@@ -502,7 +494,7 @@ ROTATES & SHIFTS
 	}
 
 	Ticks CPU::SWAP(Byte byte){
-		unsigned char smallNibble = byte.val() & 0x0F;
+		uint8_t smallNibble = byte.val() & 0x0F;
 		byte = (byte >> 4) + (smallNibble << 4);
 
 		setZFlag(byte == 0);
@@ -539,7 +531,7 @@ RETURNS
 /***
 BIT
 ***/
-	Ticks CPU::BIT_b_r(unsigned char bit, Byte reg){
+	Ticks CPU::BIT_b_r(uint8_t bit, Byte reg){
 		setZFlag(!getBit(reg, bit));
 		setNFlag(false);
 		setHFlag(true);
@@ -547,12 +539,12 @@ BIT
 	}
 
 	//RES, SET
-	Ticks CPU::SET_b_r(unsigned char bit, Byte reg){
+	Ticks CPU::SET_b_r(uint8_t bit, Byte reg){
 		reg |= 1 << bit;
 		return 8;
 	}
 
-	Ticks CPU::RES_b_r(unsigned char bit, Byte reg){
+	Ticks CPU::RES_b_r(uint8_t bit, Byte reg){
 		reg &= ~(1 << bit);
 		return 8;
 	}
