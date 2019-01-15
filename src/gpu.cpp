@@ -1,6 +1,7 @@
 #include "gpu.h"
 #include "memorylocs.h"
 #include "bytes/byte.h"
+#include <iostream>
 
 GPU::GPU(MemoryMap& gameboyMemory) :
 	memoryMap(gameboyMemory)
@@ -77,35 +78,39 @@ void GPU::process(Ticks ticks){
 
 void GPU::setMode(Mode m){
 	mode = m;
-	auto statLCDC = memoryMap.byte(STAT);
+	auto statLCD = memoryMap.byte(STAT);
 	switch(mode){
 		case Mode::H_BLANK:
+			memoryMap.setVramAccess(true);
+			memoryMap.setOamAccess(true);
 			//H-Blank interrupt
-			if (statLCDC.getBit(3)){
+			if (statLCD.getBit(3)){
 				memoryMap.byte(IF).setBit(1, 1);
 			}
-			statLCDC.setBit(0,0);
-			statLCDC.setBit(1,0);
+			statLCD.setBit(0,0);
+			statLCD.setBit(1,0);
 			break;
 		case Mode::V_BLANK:
 			//V-Blank interrupt
-			if (statLCDC.getBit(4)){
+			if (statLCD.getBit(4)){
 				memoryMap.byte(IF).setBit(1, 1);
 			}
-			statLCDC.setBit(0,1);
-			statLCDC.setBit(1,0);
+			statLCD.setBit(0,1);
+			statLCD.setBit(1,0);
 			break;
 		case Mode::OAM_SEARCH:
+			memoryMap.setOamAccess(false);
 			//OAM interrupt
-			if (statLCDC.getBit(5)){
+			if (statLCD.getBit(5)){
 				memoryMap.byte(IF).setBit(1, 1);
 			}
-			statLCDC.setBit(0,0);
-			statLCDC.setBit(1,1);
+			statLCD.setBit(0,0);
+			statLCD.setBit(1,1);
 			break;
 		case Mode::PIXEL_TRANSFER:
-			statLCDC.setBit(0,1);
-			statLCDC.setBit(1,1);
+			statLCD.setBit(0,1);
+			statLCD.setBit(1,1);
+			memoryMap.setVramAccess(false);
 			break;
 
 	}
@@ -115,7 +120,7 @@ void GPU::setMode(Mode m){
 void GPU::initialiseTileMapData(){
 	auto address = VRAM_TILE_START;
 	const unsigned int rowSize = NO_TILES*Tile::WIDTH;
-	for (auto tile = 0; tile < NO_TILES; tile++){
+	for (unsigned int tile = 0; tile < NO_TILES; tile++){
 		for (auto row = 0; row < Tile::HEIGHT; row++){
 			auto b1 = memoryMap.byte(address++);
 			auto b2 = memoryMap.byte(address++);
@@ -136,7 +141,7 @@ void GPU::initialiseTileMapData(){
 }
 
 void GPU::exportTileMap(){
-	for (auto x = 0; x < NO_TILES *Tile::WIDTH; x++){
+	for (unsigned int x = 0; x < NO_TILES *Tile::WIDTH; x++){
 		for (auto y = 0; y < Tile::HEIGHT; y++){
 				
 			auto pos = x + y * NO_TILES *Tile::WIDTH;
@@ -177,13 +182,25 @@ void GPU::exportTileMap(){
 }
 
 unsigned char GPU::getTilePixel(unsigned char tileID, unsigned char x, unsigned char y){
-	return tileMapData[tileID*Tile::WIDTH + x + y*NO_TILES*Tile::WIDTH];
+	if (memoryMap.byte(LCDC).getBit(4) == 0){
+		//8800-97FF 9000 is tile 0, 8800 is -128
+		//Change "signed" byte counting from 9000 to unsigned counting from 8800
+		tileID += 128;
+		return tileMapData[(128+tileID)*Tile::WIDTH + x + y*NO_TILES*Tile::WIDTH];
+	}
+	else{
+		return tileMapData[tileID*Tile::WIDTH + x + y*NO_TILES*Tile::WIDTH];
+	}
 }
 
 
 void GPU::renderBackground(){
-	auto statLCDC = memoryMap.byte(LCDC);
-	const unsigned int backgroundTileMap = statLCDC.getBit(3) ? 0x9C00 : 0x9800;
+	auto lcdc = memoryMap.byte(LCDC);
+	//if background display disabled dont draw
+	if (lcdc.getBit(0) == 0){
+		return;
+	}
+	const unsigned int backgroundTileMap = lcdc.getBit(3) ? 0x9C00 : 0x9800;
 	//get background map
 	auto scx = memoryMap.byte(SCX).val();
 	auto scy = memoryMap.byte(SCY).val();
@@ -207,14 +224,13 @@ void GPU::renderBackground(){
 }
 
 void GPU::renderWindow(){
-	//get background map
-	auto statLCDC = memoryMap.byte(LCDC);
+	auto lcdc = memoryMap.byte(LCDC);
 	//if window not enabled dont draw
-	if (statLCDC.getBit(5) == 0){
+	if (lcdc.getBit(5) == 0){
 		return;
 	}
 
-	const unsigned int windowTileMap = statLCDC.getBit(6) ? 0x9C00 : 0x9800;
+	const unsigned int windowTileMap = lcdc.getBit(6) ? 0x9C00 : 0x9800;
 	auto wx = memoryMap.byte(WX).val();
 	auto wy = memoryMap.byte(WY).val();
 	
@@ -244,6 +260,11 @@ void GPU::renderWindow(){
 const unsigned int MAX_SPRITES = 40;
 
 void GPU::renderSprites(){
+	auto lcdc = memoryMap.byte(LCDC);
+	//if sprite not enabled dont draw
+	if (lcdc.getBit(1) == 0){
+		return;
+	}
 	auto address = SPRITE_OAM;
 	for (unsigned int sprite = 0; sprite < MAX_SPRITES; sprite++){
 		unsigned char yStart = memoryMap.byte(address++).val()-16;

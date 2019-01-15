@@ -8,8 +8,8 @@
 template <class T, size_t ROW, size_t COL>
 using Matrix = std::array<std::array<T, COL>, ROW>;
 
-//Number of tiles represented from 0x8000-0x9000 7FF
-const unsigned int NO_TILES = 256;
+//Number of tiles represented from 0x8000-0x97FF
+const unsigned int NO_TILES = 384;
 const unsigned char WIDTH = 160;
 const unsigned char HEIGHT = 144;
 class Tile {
