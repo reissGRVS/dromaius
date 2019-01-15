@@ -6,3 +6,4 @@ CMakeFiles/
 Dromaius
 *.o
 src/main.cpp
+*.gb
