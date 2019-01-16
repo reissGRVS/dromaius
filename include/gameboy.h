@@ -5,6 +5,7 @@
 #include "memorymap.h"
 #include "timer.h"
 #include "joypad.h"
+#include <chrono>
 
 class Gameboy{
 	public:
@@ -19,4 +20,7 @@ class Gameboy{
 		sf::Sprite b;
 		sf::RenderWindow window;
 		sf::Texture background;
+
+		int64_t FRAME_US = 16666;
+		std::chrono::steady_clock::time_point lastFrame = std::chrono::steady_clock::now();
 };

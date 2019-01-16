@@ -34,22 +34,27 @@ class GPU{
 	public:
 		GPU(MemoryMap& memoryMap);
 		void process(Ticks ticks);
-		void setMode(Mode m);
-		void initialiseTileMapData();
 		void setDrawCallback(std::function<void()> drawCallback);
-		std::array<sf::Uint8, 4* NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapDataSF;
+		
 		std::array<sf::Uint8, 4* WIDTH*HEIGHT> framebufferSF;
-		void renderBackground();
-		void renderWindow();
-		void renderSprites();
+		
 		void exportTileMap();
 	private:
 		MemoryMap& memoryMap;
-		
-		uint8_t getTilePixel(uint8_t tileID, uint8_t x, uint8_t y);
+
+		//Pixel processing
+		void initialiseTileMapData();
+		void renderBackground(uint8_t yOffset);
+		void renderWindow(uint8_t yOffset);
+		void renderSprites();
+		uint8_t getTilePixel(uint8_t tileID, uint8_t x, uint8_t y, bool sprite);
 		void drawPixel(uint8_t pixel, uint8_t x, uint8_t y);
+
 		std::array<uint8_t, NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapData;
 		std::array<uint8_t, WIDTH*HEIGHT> framebuffer;
+
+		//Mode management
+		void setMode(Mode m);
 
 		Mode mode = Mode::OAM_SEARCH;
 		Ticks tickCount = 0;
@@ -57,8 +62,12 @@ class GPU{
 		const Ticks ticksPerPixelTransfer = 172;
 		const Ticks ticksPerHBlank = 204;
 		const Ticks ticksPerLine = ticksPerHBlank + ticksPerOamSearch + ticksPerPixelTransfer;
-
+		
+		//Callback function for when buffer is ready to draw
 		std::function<void()> draw;
+
+		//Used for exportTileMap
+		std::array<sf::Uint8, 4* NO_TILES*Tile::HEIGHT*Tile::WIDTH> tileMapDataSF;
 };
 
 

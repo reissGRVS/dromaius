@@ -28,11 +28,10 @@ class Byte{
 					*value = val;
 					break;
 				case ByteType::NO_WRITE:
-					spdlog::get("stderr")->error("Tried to write {:x} to protected byte", val);
+					spdlog::get("stderr")->debug("Tried to write {:x} to protected byte", val);
 					break;
 				case ByteType::ROM_BANK_SELECT:
 					memoryMap->setRomBank(val & 0x1F);
-					spdlog::get("console")->debug("Changed bank to {:x}", val & 0x1F);
 					break;
 				case ByteType::WRITE_RESET:
 					*value = 0;

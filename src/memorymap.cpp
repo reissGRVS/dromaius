@@ -40,11 +40,9 @@ MemoryMap::MemoryMap(std::string cartridgeName) {
 	}
 	std::cout << std::endl;
 	std::cout << "Cartridge type: " << (int)byte(0x147).val() << std::endl;
-	std::cout << "ROM size: " << (int)byte(0x148).val() << std::endl;
-	//TODO
-	if (byte(0x148).val()){
-		romBankCount = 0x03;
-	}
+	//TODO: Make this more accurate
+	romBankCount = 2<<(byte(0x148).val());
+	std::cout << "ROM size (banks): " << (int)romBankCount << std::endl;
 	std::cout << "RAM size: " << (int)byte(0x149).val() << std::endl;
 }
 
@@ -78,10 +76,13 @@ void MemoryMap::setOamAccess(bool value){
 }
 void MemoryMap::setRomBank(uint8_t bank){
 	if (bank <= romBankCount){
+		if (bank == 0 || bank == 0x20 || bank == 0x40 || bank == 0x60 ){
+			bank += 1;
+		}
 		romBankNumber = bank;
 	}
 	else{
-		spdlog::get("stderr")->info("Trying to set rombank to invalid value");
+		spdlog::get("stderr")->error("Trying to set rombank to invalid value {:x}", bank);
 	}
 }
 
@@ -101,8 +102,8 @@ Byte MemoryMap::byte(uint16_t address) {
 	}
 	//ROM BANK NN
 	else if	(address < VIDEO_RAM){
-		address += ROM_BANK_NN * (romBankNumber-1);
-		return Byte(&cartridge[address], ByteType::NO_WRITE);
+		uint32_t cartAddress = address + ROM_BANK_NN * (romBankNumber-1);
+		return Byte(&cartridge[cartAddress], ByteType::NO_WRITE);
 	}
 	//VIDEO RAM
 	else if (address < EXTERNAL_RAM){
@@ -154,10 +155,12 @@ Byte MemoryMap::byte(uint16_t address) {
 				//Link cable debugging
 				std::cout << ioPorts[SB];
 				break;
-			case DMA:
-				return Byte(&ioPorts[address], ByteType::DMA_SIGNAL, this);
 			case DIV:
 				return Byte(&ioPorts[address], ByteType::WRITE_RESET);
+			case LY:
+				return Byte(&ioPorts[address], ByteType::WRITE_RESET);
+			case DMA:
+				return Byte(&ioPorts[address], ByteType::DMA_SIGNAL, this);
 		}
 		return Byte(&ioPorts[address]);
 	}

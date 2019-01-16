@@ -29,8 +29,8 @@ class MemoryMap{
 		std::array<uint8_t, (IE-HIGH_RAM)> hram = {};
 		uint8_t interruptEnable = 0;
 
-		uint8_t romBankNumber = 0x01;
-		uint8_t romBankCount = 0x01;
+		uint16_t romBankNumber = 0x01;
+		uint16_t romBankCount = 0x01;
 
 
 		bool _bootRomEnabled = true;

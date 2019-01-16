@@ -44,12 +44,9 @@ void GPU::process(Ticks ticks){
 
 				//Process line
 				auto byteLY = memoryMap.byte(LY);
-				//TODO: Draw this line
 				byteLY++;
 
 				if (byteLY == HEIGHT){
-					//VBlank interrupt
-					memoryMap.byte(IF).setBit(0, 1);
 					setMode(Mode::V_BLANK);
 				}
 				else{
@@ -66,6 +63,7 @@ void GPU::process(Ticks ticks){
 				if (byteLY == 154){
 					//TODO: last LY is meant to be shorter http://gameboy.mongenel.com/dmg/istat98.txt
 					byteLY = 0;
+					initialiseTileMapData();
 					setMode(Mode::OAM_SEARCH);
 				}
 			}
@@ -91,8 +89,11 @@ void GPU::setMode(Mode m){
 			statLCD.setBit(1,0);
 			break;
 		case Mode::V_BLANK:
-			//V-Blank interrupt
+			renderSprites();
 			draw();
+
+			//VBlank interrupts
+			memoryMap.byte(IF).setBit(0, 1);
 			if (statLCD.getBit(4)){
 				memoryMap.byte(IF).setBit(1, 1);
 			}
@@ -111,13 +112,16 @@ void GPU::setMode(Mode m){
 		case Mode::PIXEL_TRANSFER:
 			statLCD.setBit(0,1);
 			statLCD.setBit(1,1);
+			auto byteLY = memoryMap.byte(LY).val();
+			renderBackground(byteLY);
+			renderWindow(byteLY);
 			memoryMap.setVramAccess(false);
 			break;
 
 	}
 }
 
-
+//TODO: Bypass this
 void GPU::initialiseTileMapData(){
 	auto address = VIDEO_RAM;
 	const uint16_t rowSize = NO_TILES*Tile::WIDTH;
@@ -182,8 +186,8 @@ void GPU::exportTileMap(){
 	tileMap.saveToFile("tilemap.png");
 }
 
-uint8_t GPU::getTilePixel(uint8_t tileID, uint8_t x, uint8_t y){
-	if (memoryMap.byte(LCDC).getBit(4) == 0){
+uint8_t GPU::getTilePixel(uint8_t tileID, uint8_t x, uint8_t y, bool sprite = false){
+	if (!sprite && memoryMap.byte(LCDC).getBit(4) == 0){
 		//8800-97FF 9000 is tile 0, 8800 is -128
 		//Change "signed" byte counting from 9000 to unsigned counting from 8800
 		tileID += 128;
@@ -195,7 +199,7 @@ uint8_t GPU::getTilePixel(uint8_t tileID, uint8_t x, uint8_t y){
 }
 
 
-void GPU::renderBackground(){
+void GPU::renderBackground(uint8_t yOffset){
 	auto lcdc = memoryMap.byte(LCDC);
 	//if background display disabled dont draw
 	if (lcdc.getBit(0) == 0){
@@ -206,24 +210,22 @@ void GPU::renderBackground(){
 	auto scx = memoryMap.byte(SCX).val();
 	auto scy = memoryMap.byte(SCY).val();
 	
-	for (uint8_t yOffset = 0; yOffset < HEIGHT; yOffset++ ) { //32x32tilemap
-		for (uint8_t xOffset = 0; xOffset < WIDTH; xOffset++ ){
+	for (uint8_t xOffset = 0; xOffset < WIDTH; xOffset++ ){
 
-			uint8_t x = xOffset + scx;
-			uint8_t y = yOffset + scy;
+		uint8_t x = xOffset + scx;
+		uint8_t y = yOffset + scy;
 
-			uint8_t xTile = x/Tile::WIDTH;
-			uint8_t yTile = y/Tile::HEIGHT;
-			uint16_t address = backgroundTileMap+xTile+yTile*(TILEMAP_WIDTH);
+		uint8_t xTile = x/Tile::WIDTH;
+		uint8_t yTile = y/Tile::HEIGHT;
+		uint16_t address = backgroundTileMap+xTile+yTile*(TILEMAP_WIDTH);
 
-			auto tileID = memoryMap.byte(address).val();
-			auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
-			drawPixel(pixel, xOffset, yOffset);
-		}
+		auto tileID = memoryMap.byte(address).val();
+		auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
+		drawPixel(pixel, xOffset, yOffset);
 	}
 }
 
-void GPU::renderWindow(){
+void GPU::renderWindow(uint8_t yOffset){
 	auto lcdc = memoryMap.byte(LCDC);
 	//if window not enabled dont draw
 	if (lcdc.getBit(5) == 0){
@@ -234,25 +236,23 @@ void GPU::renderWindow(){
 	auto wx = memoryMap.byte(WX).val();
 	auto wy = memoryMap.byte(WY).val();
 	
-	for (uint8_t yOffset = 0; yOffset < HEIGHT; yOffset++ ) { //32x32tilemap
-		for (uint8_t xOffset = 0; xOffset < WIDTH; xOffset++ ){
+	for (uint8_t xOffset = 0; xOffset < WIDTH; xOffset++ ){
 
-			uint8_t x = xOffset;
-			uint8_t y = yOffset;
+		uint8_t x = xOffset;
+		uint8_t y = yOffset;
 
-			uint8_t xTile = x/Tile::WIDTH;
-			uint8_t yTile = y/Tile::HEIGHT;
-			//TODO Magic Number
-			uint16_t address = windowTileMap+xTile+yTile*(32);
+		uint8_t xTile = x/Tile::WIDTH;
+		uint8_t yTile = y/Tile::HEIGHT;
+		//TODO Magic Number
+		uint16_t address = windowTileMap+xTile+yTile*(32);
 
-			auto tileID = memoryMap.byte(address).val();
-			auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
-			
-			auto xTotal = wx+x;
-			auto yTotal = wy+y;
-			if (xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
-					drawPixel(pixel, xTotal, yTotal);
-			}
+		auto tileID = memoryMap.byte(address).val();
+		auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
+		
+		auto xTotal = wx+x;
+		auto yTotal = wy+y;
+		if (xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
+				drawPixel(pixel, xTotal, yTotal);
 		}
 	}
 }
@@ -281,7 +281,8 @@ void GPU::renderSprites(){
 
 				auto pixel = getTilePixel(	tileID, 
 											xflip ? (Tile::WIDTH - x - 1) : x, 
-											yflip ? (Tile::HEIGHT - y - 1) : y );
+											yflip ? (Tile::HEIGHT - y - 1) : y,
+											true );
 				auto xTotal = xStart+x;
 				auto yTotal = yStart+y;
 				//Checks if pixel is not 0 (transparent) and that it is in range of screen
@@ -305,27 +306,27 @@ void GPU::drawPixel(uint8_t pixel, uint8_t x, uint8_t y){
 	auto firstPos = 4*pos;
 	switch(pixel){
 		case 3:
-			/*R*/framebufferSF[firstPos] = 0;
-			/*G*/framebufferSF[firstPos+1] = 0;
-			/*B*/framebufferSF[firstPos+2] = 0;
+			/*R*/framebufferSF[firstPos] = 28;
+			/*G*/framebufferSF[firstPos+1] = 27;
+			/*B*/framebufferSF[firstPos+2] = 7;
 			/*A*/framebufferSF[firstPos+3] = 255;
 			break;
 		case 2:
-			/*R*/framebufferSF[firstPos] = 80;
-			/*G*/framebufferSF[firstPos+1] = 80;
-			/*B*/framebufferSF[firstPos+2] = 80;
+			/*R*/framebufferSF[firstPos] = 63;
+			/*G*/framebufferSF[firstPos+1] = 62;
+			/*B*/framebufferSF[firstPos+2] = 28;
 			/*A*/framebufferSF[firstPos+3] = 255;
 			break;
 		case 1:
-			/*R*/framebufferSF[firstPos] = 180;
-			/*G*/framebufferSF[firstPos+1] = 180;
-			/*B*/framebufferSF[firstPos+2] = 180;
+			/*R*/framebufferSF[firstPos] = 148;
+			/*G*/framebufferSF[firstPos+1] = 149;
+			/*B*/framebufferSF[firstPos+2] = 73;
 			/*A*/framebufferSF[firstPos+3] = 255;
 			break;
 		case 0:
-			/*R*/framebufferSF[firstPos] = 250;
-			/*G*/framebufferSF[firstPos+1] = 255;
-			/*B*/framebufferSF[firstPos+2] = 255;
+			/*R*/framebufferSF[firstPos] = 246;
+			/*G*/framebufferSF[firstPos+1] = 247;
+			/*B*/framebufferSF[firstPos+2] = 122;
 			/*A*/framebufferSF[firstPos+3] = 255;
 			break;
 	} 

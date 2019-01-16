@@ -5,27 +5,25 @@
 const uint8_t SCALE = 3;
 
 Gameboy::Gameboy(std::string cartridgeName) :
-	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap), timer(memoryMap), window(sf::VideoMode(WIDTH*SCALE,HEIGHT*SCALE), "Dromaius", sf::Style::Resize)
+	memoryMap(cartridgeName), cpu(memoryMap), gpu(memoryMap), timer(memoryMap), window(sf::VideoMode(WIDTH*SCALE,HEIGHT*SCALE), "Dromaius", sf::Style::Titlebar)
 {
 	memoryMap.setJoypadCallback(joypad.byteUpdate);
 
 	//Window set up
+	window.setFramerateLimit(60);
+	
 	background.create(WIDTH, HEIGHT);
 	b.setTexture(background);
 	b.scale(SCALE,SCALE);
+	//This updates joypad, draws buffer to screen and helps with timing frames
 	gpu.setDrawCallback(
 		[this](){
 			joypad.keyUpdate();
-			gpu.initialiseTileMapData();
-			gpu.renderBackground();
-			gpu.renderWindow();
-			gpu.renderSprites();
-		
-		
 			background.update(gpu.framebufferSF.data());
 			window.clear();
 			window.draw(b);
-			window.display();}
+			window.display();
+		}
 	);
 
 
