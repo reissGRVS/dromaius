@@ -15,6 +15,7 @@ class MemoryMap{
 		void startDMA();
 		void setVramAccess(bool value);
 		void setOamAccess(bool value);
+		void setRomBank(uint8_t bank);
 	private:
 		std::array<uint8_t, 0x100> bootRom = {};
 		std::vector<uint8_t> cartridge = {};
@@ -27,6 +28,10 @@ class MemoryMap{
 		std::array<uint8_t, (HIGH_RAM-IO_PORTS)> ioPorts = {};
 		std::array<uint8_t, (IE-HIGH_RAM)> hram = {};
 		uint8_t interruptEnable = 0;
+
+		uint8_t romBankNumber = 0x01;
+		uint8_t romBankCount = 0x01;
+
 
 		bool _bootRomEnabled = true;
 		//Currently unused

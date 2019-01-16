@@ -41,6 +41,10 @@ MemoryMap::MemoryMap(std::string cartridgeName) {
 	std::cout << std::endl;
 	std::cout << "Cartridge type: " << (int)byte(0x147).val() << std::endl;
 	std::cout << "ROM size: " << (int)byte(0x148).val() << std::endl;
+	//TODO
+	if (byte(0x148).val()){
+		romBankCount = 0x03;
+	}
 	std::cout << "RAM size: " << (int)byte(0x149).val() << std::endl;
 }
 
@@ -72,15 +76,32 @@ void MemoryMap::setVramAccess(bool value){
 void MemoryMap::setOamAccess(bool value){
 	oamEnabled = value;
 }
+void MemoryMap::setRomBank(uint8_t bank){
+	if (bank <= romBankCount){
+		romBankNumber = bank;
+	}
+	else{
+		spdlog::get("stderr")->info("Trying to set rombank to invalid value");
+	}
+}
 
 
 Byte MemoryMap::byte(uint16_t address) {
 
-	//ROM
-	if 		(address < VIDEO_RAM){
+	//ROM BANK 00
+	if 		(address < ROM_BANK_NN){
 		if (bootRomEnabled() && address < BOOT_ROM_SIZE){
 			return Byte(&bootRom[address], ByteType::NO_WRITE);
 		}
+
+		if (address >= 0x2000){
+			return Byte(&cartridge[address], ByteType::ROM_BANK_SELECT, this);
+		}
+		return Byte(&cartridge[address], ByteType::NO_WRITE);
+	}
+	//ROM BANK NN
+	else if	(address < VIDEO_RAM){
+		address += ROM_BANK_NN * (romBankNumber-1);
 		return Byte(&cartridge[address], ByteType::NO_WRITE);
 	}
 	//VIDEO RAM
@@ -150,4 +171,5 @@ Byte MemoryMap::byte(uint16_t address) {
 		return Byte(&interruptEnable);
 	}
 
+	exit(2);
 }

@@ -9,7 +9,8 @@ enum ByteType {
 	NORMAL,
 	NO_WRITE,
 	WRITE_RESET,
-	DMA_SIGNAL
+	DMA_SIGNAL,
+	ROM_BANK_SELECT
 };
 
 class Byte{
@@ -28,6 +29,10 @@ class Byte{
 					break;
 				case ByteType::NO_WRITE:
 					spdlog::get("stderr")->error("Tried to write {:x} to protected byte", val);
+					break;
+				case ByteType::ROM_BANK_SELECT:
+					memoryMap->setRomBank(val & 0x1F);
+					spdlog::get("console")->debug("Changed bank to {:x}", val & 0x1F);
 					break;
 				case ByteType::WRITE_RESET:
 					*value = 0;
