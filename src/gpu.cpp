@@ -265,36 +265,51 @@ void GPU::renderSprites(){
 	if (lcdc.getBit(1) == 0){
 		return;
 	}
+	bool bigSprites = lcdc.getBit(2);
 	auto address = SPRITE_OAM;
 	for (uint16_t sprite = 0; sprite < MAX_SPRITES; sprite++){
 		uint8_t yStart = memoryMap.byte(address++).val()-16;
 		uint8_t xStart = memoryMap.byte(address++).val()-8;
 		auto tileID = memoryMap.byte(address++).val();
-		//TODO: implement all of these 
 		auto attributes = memoryMap.byte(address++);
 
-		bool xflip = attributes.getBit(5); 
-		bool yflip = attributes.getBit(6);
-
-		for (auto y = 0; y < Tile::HEIGHT; y++){
-			for (auto x = 0; x < Tile::WIDTH; x++){
-
-				auto pixel = getTilePixel(	tileID, 
-											xflip ? (Tile::WIDTH - x - 1) : x, 
-											yflip ? (Tile::HEIGHT - y - 1) : y,
-											true );
-				auto xTotal = xStart+x;
-				auto yTotal = yStart+y;
-				//Checks if pixel is not 0 (transparent) and that it is in range of screen
-				if (pixel && xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
-					drawPixel(pixel, xTotal, yTotal);
-				}
+		
+		if (bigSprites) {
+			bool yflip = attributes.getBit(6);
+			if (yflip){
+				renderSpriteTile(tileID, xStart, yStart+Tile::HEIGHT, attributes);
+				renderSpriteTile(tileID+1, xStart, yStart, attributes);
 			}
+			else{
+				renderSpriteTile(tileID, xStart, yStart, attributes);
+				renderSpriteTile(tileID+1, xStart, yStart+Tile::HEIGHT, attributes);
+			}
+			
 		}
-		
-		
+		else{
+			
+		}
 	}
 
+}
+
+void GPU::renderSpriteTile(uint8_t tileID, uint8_t xStart, uint8_t yStart, Byte attributes){
+	bool xflip = attributes.getBit(5); 
+	bool yflip = attributes.getBit(6);
+	for (auto y = 0; y < Tile::HEIGHT; y++){
+		for (auto x = 0; x < Tile::WIDTH; x++){
+			auto pixel = getTilePixel(	tileID, 
+										xflip ? (Tile::WIDTH - x - 1) : x, 
+										yflip ? (Tile::HEIGHT - y - 1) : y,
+										true );
+			auto xTotal = xStart+x;
+			auto yTotal = yStart+y;
+			//Checks if pixel is not 0 (transparent) and that it is in range of screen
+			if (pixel && xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
+				drawPixel(pixel, xTotal, yTotal);
+			}
+		}
+	}
 }
 
 //TODO: Move to Window class

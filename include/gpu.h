@@ -47,6 +47,8 @@ class GPU{
 		void renderBackground(uint8_t yOffset);
 		void renderWindow(uint8_t yOffset);
 		void renderSprites();
+		void renderSpriteTile(uint8_t tileID, uint8_t xStart, uint8_t yStart, Byte attributes);
+		
 		uint8_t getTilePixel(uint8_t tileID, uint8_t x, uint8_t y, bool sprite);
 		void drawPixel(uint8_t pixel, uint8_t x, uint8_t y);
 
