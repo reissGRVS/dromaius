@@ -22,6 +22,9 @@ Gameboy::Gameboy(std::string cartridgeName) :
 			background.update(gpu.framebufferSF.data());
 			window.clear();
 			window.draw(b);
+			
+		        sf::Event ev;
+            		window.pollEvent(ev);
 			window.display();
 		}
 	);
