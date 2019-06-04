@@ -287,7 +287,7 @@ void GPU::renderSprites(){
 			
 		}
 		else{
-			
+			renderSpriteTile(tileID, xStart, yStart, attributes);
 		}
 	}
 
