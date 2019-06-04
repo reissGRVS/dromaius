@@ -12,50 +12,41 @@ Timer::Timer(MemoryMap& mem) :
 
 
 void Timer::process(Ticks ticks){
-	d+=ticks;
-	if (d > DIV_TICKS){
+	t+=ticks;
+	if (t >= TIMER_TICKS){
+		t-=TIMER_TICKS;
+		tock();
+	}
+
+}
+
+void Timer::tock(){
+	//increment clock for DIV and B
+	d++;
+	b++;
+
+	if (d == (DIV_TICKS/TIMER_TICKS)){
+		//increment DIV and reset DIV clock
 		div++;
-		d%=DIV_TICKS;
+		d=0;
 	}
 
 	//If Timer is started
 	if(tac.getBit(2)){
-		t+=ticks;
-		auto ticksPerClock = clock();
-		if (t > ticksPerClock){
-			uint16_t clockInc = t/ticksPerClock;
-			t %= ticksPerClock;
+		auto timerTickPerClock = TIMER_CLOCK/TAC_CLOCK[tac & 0x3];
+		//while base clock is past ticks required for timer tick
+		while (b >= timerTickPerClock){
+			b -= timerTickPerClock;
 
-			while(clockInc){
-				clockInc--;
-				if (tima == 0xFF){
-					tima = tma;
-					//Request Timer interrupt
-					memoryMap.byte(IF).setBit(2,1);
-				}
-				else{
-					tima++;
-				}
+			if (tima == 0xFF){
+				tima = tma;
+				//Request Timer interrupt
+				memoryMap.byte(IF).setBit(2,1);
 			}
-			
+			else{
+				tima++;
+			}
+					
 		}
-	}
-}
-
-uint16_t Timer::clock(){
-	uint8_t clockSelect = (tac.getBit(1) << 1) + tac.getBit(0);
-
-	switch(clockSelect){
-		case 0: //00
-			return CPU_CLOCK/TAC_00;
-		case 1: //01
-			return CPU_CLOCK/TAC_01;
-		case 2: //10
-			return CPU_CLOCK/TAC_10;
-		case 3: //11
-			return CPU_CLOCK/TAC_11;
-		default:
-			spdlog::get("stderr")->critical("This should not happen, Timer::clock");
-			exit(0);
 	}
 }

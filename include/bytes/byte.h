@@ -86,6 +86,7 @@ class Byte{
 		}
 
     	//postfix
+		//TODO: Find neater way of doing this
 		virtual uint8_t operator++( int ){
 
 			uint16_t returnVal = val();

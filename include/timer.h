@@ -10,11 +10,14 @@ class Timer{
 		void process(Ticks ticks);
 	
 	private:
-		uint16_t clock();
-		//Timer ticks
-		Ticks t;
-		//DIV ticks
-		Ticks d;
+		void tock();
+		//Machine clock counter
+		uint32_t t;
+
+		//DIV clock
+		uint32_t d;
+		//Base clock
+		uint32_t b;
 
 		MemoryMap& memoryMap;
 		Byte tima;
