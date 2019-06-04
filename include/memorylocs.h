@@ -15,6 +15,8 @@ LOC IO_PORTS 		= 0xFF00;
 LOC HIGH_RAM 		= 0xFF80;
 
 
+LOC TILE_MAP_ZERO = 0x9800;
+LOC TILE_MAP_ONE = 0x9C00;
   /////////////
  // IO PORTS//
 /////////////

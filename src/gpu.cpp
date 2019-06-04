@@ -205,7 +205,7 @@ void GPU::renderBackground(uint8_t yOffset){
 	if (lcdc.getBit(0) == 0){
 		return;
 	}
-	const uint16_t backgroundTileMap = lcdc.getBit(3) ? 0x9C00 : 0x9800;
+	const uint16_t backgroundTileMap = lcdc.getBit(3) ? TILE_MAP_ONE : TILE_MAP_ZERO;
 	//get background map
 	auto scx = memoryMap.byte(SCX).val();
 	auto scy = memoryMap.byte(SCY).val();
@@ -232,14 +232,18 @@ void GPU::renderWindow(uint8_t yOffset){
 		return;
 	}
 
-	const uint16_t windowTileMap = lcdc.getBit(6) ? 0x9C00 : 0x9800;
+	const uint16_t windowTileMap = lcdc.getBit(6) ? TILE_MAP_ONE : TILE_MAP_ZERO;
 	auto wx = memoryMap.byte(WX).val();
 	auto wy = memoryMap.byte(WY).val();
 	
+	if (yOffset < wy){
+		return;
+	}
+	
 	for (uint8_t xOffset = 0; xOffset < WIDTH; xOffset++ ){
 
-		uint8_t x = xOffset;
-		uint8_t y = yOffset;
+		uint8_t x = xOffset+wx;
+		uint8_t y = yOffset-wy;
 
 		uint8_t xTile = x/Tile::WIDTH;
 		uint8_t yTile = y/Tile::HEIGHT;
@@ -249,11 +253,7 @@ void GPU::renderWindow(uint8_t yOffset){
 		auto tileID = memoryMap.byte(address).val();
 		auto pixel = getTilePixel(tileID, x%Tile::WIDTH, y%Tile::HEIGHT);
 		
-		auto xTotal = wx+x;
-		auto yTotal = wy+y;
-		if (xTotal < WIDTH && xTotal >= 0 && yTotal < HEIGHT && yTotal >= 0){
-				drawPixel(pixel, xTotal, yTotal);
-		}
+		drawPixel(pixel, xOffset, yOffset);
 	}
 }
 
